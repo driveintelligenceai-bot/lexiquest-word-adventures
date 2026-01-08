@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Flame, Trophy, Settings, Volume2, Map, User, Award, Users, VolumeX } from 'lucide-react';
+import { Flame, Trophy, Settings, Volume2, Map, User, Award, Users, VolumeX, Music } from 'lucide-react';
 import { useStickyState } from '@/hooks/useStickyState';
 import { useVoiceSettings } from '@/hooks/useVoiceSettings';
 import { applyLexiaTheme } from '@/lib/lexiaTheme';
 import { calculateStreak, getTodayStr, getStreakMilestoneMessage, getStreakXpBonus } from '@/lib/streakUtils';
 import { STORY_REGIONS, getRandomTreasure, TreasureReward, getJumbleMonster } from '@/lib/storyData';
 import { sounds } from '@/lib/sounds';
+import { backgroundMusic } from '@/lib/backgroundMusic';
 
 // Game components
 import { SoundMatchGame } from '@/components/game/SoundMatchGame';
@@ -14,6 +15,8 @@ import { WordBuilderGame } from '@/components/game/WordBuilderGame';
 import { RhymeHuntGame } from '@/components/game/RhymeHuntGame';
 import { MemoryMatchGame } from '@/components/game/MemoryMatchGame';
 import { SyllableSortGame } from '@/components/game/SyllableSortGame';
+import { SpellingChallenge } from '@/components/game/SpellingChallenge';
+import { VocabularyQuiz } from '@/components/game/VocabularyQuiz';
 import { QuestVictory } from '@/components/game/QuestVictory';
 import { NPCGuide } from '@/components/game/NPCGuide';
 import { EnhancedOnboarding } from '@/components/game/EnhancedOnboarding';
@@ -92,8 +95,8 @@ const DEFAULT_STATE: LexiaGameState = {
   unlockedAchievements: [],
 };
 
-type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'rhymeHunt' | 'memoryMatch' | 'syllableSort' | 'victory' | 'profile' | 'settings' | 'parent' | 'trophies';
-type QuestType = 'sound' | 'word' | 'rhyme' | 'memory' | 'syllable';
+type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'rhymeHunt' | 'memoryMatch' | 'syllableSort' | 'spelling' | 'vocabulary' | 'victory' | 'profile' | 'settings' | 'parent' | 'trophies';
+type QuestType = 'sound' | 'word' | 'rhyme' | 'memory' | 'syllable' | 'spelling' | 'vocabulary';
 
 const LexiaHome: React.FC = () => {
   const [state, setState] = useStickyState<LexiaGameState>(DEFAULT_STATE, 'lexia_world_v4');
@@ -254,6 +257,8 @@ const LexiaHome: React.FC = () => {
       rhyme: 'rhymeHunt',
       memory: 'memoryMatch',
       syllable: 'syllableSort',
+      spelling: 'spelling',
+      vocabulary: 'vocabulary',
     };
     
     setView(viewMap[questType]);
@@ -490,7 +495,28 @@ const LexiaHome: React.FC = () => {
     );
   }
 
-  // Map View - Now with Story World Map
+  if (view === 'spelling') {
+    return (
+      <SpellingChallenge
+        questionsCount={5}
+        wilsonStep={state.progress.wilsonStep}
+        onComplete={handleQuestComplete}
+        onBack={() => setView('home')}
+      />
+    );
+  }
+
+  if (view === 'vocabulary') {
+    return (
+      <VocabularyQuiz
+        questionsCount={5}
+        wilsonStep={state.progress.wilsonStep}
+        onComplete={handleQuestComplete}
+        onBack={() => setView('home')}
+      />
+    );
+  }
+
   if (view === 'map') {
     return (
       <div className="min-h-screen bg-background p-4 pb-32 safe-area-inset">
@@ -585,6 +611,16 @@ const LexiaHome: React.FC = () => {
           </div>
 
           <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const newState = backgroundMusic.toggle();
+                playEffect('tap');
+              }}
+              className={`h-12 w-12 rounded-xl flex items-center justify-center active:scale-95 transition-transform ${backgroundMusic.isCurrentlyPlaying() ? 'bg-primary/20' : 'bg-muted'}`}
+              aria-label={backgroundMusic.isCurrentlyPlaying() ? "Turn music off" : "Turn music on"}
+            >
+              <Music size={20} className={backgroundMusic.isCurrentlyPlaying() ? 'text-primary' : ''} />
+            </button>
             <button
               onClick={() => setView('parent')}
               className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center active:scale-95 transition-transform"
@@ -695,12 +731,30 @@ const LexiaHome: React.FC = () => {
             </button>
             <button
               onClick={() => handleStartQuest('syllable')}
-              className="col-span-2 min-h-[80px] bg-welded text-welded-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-welded-border"
+              className="min-h-[80px] bg-welded text-welded-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-welded-border"
               aria-label="Start Syllable Sort quest"
               role="button"
             >
               <span className="text-2xl" aria-hidden="true">👏</span>
               <span className="text-sm">Syllable Sort</span>
+            </button>
+            <button
+              onClick={() => handleStartQuest('spelling')}
+              className="min-h-[80px] bg-accent text-accent-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
+              aria-label="Start Spelling Challenge"
+              role="button"
+            >
+              <span className="text-2xl" aria-hidden="true">✏️</span>
+              <span className="text-sm">Spelling</span>
+            </button>
+            <button
+              onClick={() => handleStartQuest('vocabulary')}
+              className="min-h-[80px] bg-secondary text-secondary-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
+              aria-label="Start Vocabulary Quiz"
+              role="button"
+            >
+              <span className="text-2xl" aria-hidden="true">📚</span>
+              <span className="text-sm">Word Meanings</span>
             </button>
           </div>
         </motion.div>
@@ -764,6 +818,8 @@ function getQuestName(type: QuestType): string {
     rhyme: 'Rhyme Hunt Adventure',
     memory: 'Memory Match Quest',
     syllable: 'Syllable Sort Mission',
+    spelling: 'Spelling Challenge',
+    vocabulary: 'Word Meanings Quiz',
   };
   return names[type];
 }
