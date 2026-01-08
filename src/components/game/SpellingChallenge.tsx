@@ -12,35 +12,37 @@ interface SpellingChallengeProps {
 }
 
 // Spelling words with picture hints and audio
+// Wilson 1.1 ONLY - CVC words with short 'a' and consonants f, l, m, n, r, s (+ t, p for endings)
+// Avoiding welded sounds like "am" which belong to Wilson 1.5
 const SPELLING_WORDS = {
   easy: [
-    { word: 'cat', hint: '🐱 A furry pet that says meow', letters: ['c', 'a', 't', 'b', 'o'] },
-    { word: 'dog', hint: '🐕 A pet that barks', letters: ['d', 'o', 'g', 'p', 'e'] },
-    { word: 'sun', hint: '☀️ Shines in the sky', letters: ['s', 'u', 'n', 'r', 'a'] },
-    { word: 'hat', hint: '🎩 You wear it on your head', letters: ['h', 'a', 't', 'c', 'i'] },
-    { word: 'bed', hint: '🛏️ Where you sleep', letters: ['b', 'e', 'd', 'f', 'a'] },
-    { word: 'pig', hint: '🐷 A farm animal that says oink', letters: ['p', 'i', 'g', 't', 'o'] },
-    { word: 'cup', hint: '☕ You drink from it', letters: ['c', 'u', 'p', 's', 'a'] },
-    { word: 'bus', hint: '🚌 A big vehicle for travel', letters: ['b', 'u', 's', 't', 'o'] },
-    { word: 'net', hint: '🥅 Used to catch fish or in sports', letters: ['n', 'e', 't', 'b', 'i'] },
-    { word: 'box', hint: '📦 You put things inside it', letters: ['b', 'o', 'x', 'a', 'f'] },
+    { word: 'sat', hint: '🪑 Past tense of sit', letters: ['s', 'a', 't', 'r', 'l'] },
+    { word: 'mat', hint: '🧹 You wipe your feet on it', letters: ['m', 'a', 't', 'f', 'n'] },
+    { word: 'rat', hint: '🐀 A small animal with a long tail', letters: ['r', 'a', 't', 's', 'l'] },
+    { word: 'fat', hint: '🍔 The opposite of thin', letters: ['f', 'a', 't', 'm', 'n'] },
+    { word: 'fan', hint: '💨 Keeps you cool', letters: ['f', 'a', 'n', 't', 's'] },
+    { word: 'ran', hint: '🏃 Past tense of run', letters: ['r', 'a', 'n', 't', 'l'] },
+    { word: 'tan', hint: '🌞 A brown color from the sun', letters: ['t', 'a', 'n', 's', 'f'] },
+    { word: 'lap', hint: '🏃 A trip around a track', letters: ['l', 'a', 'p', 't', 's'] },
+    { word: 'nap', hint: '😴 A short sleep', letters: ['n', 'a', 'p', 't', 'r'] },
+    { word: 'sap', hint: '🌲 Sticky stuff from trees', letters: ['s', 'a', 'p', 'l', 'n'] },
   ],
   medium: [
-    { word: 'frog', hint: '🐸 Hops and says ribbit', letters: ['f', 'r', 'o', 'g', 'p', 'a'] },
-    { word: 'ship', hint: '🚢 Sails on water', letters: ['s', 'h', 'i', 'p', 't', 'a'] },
-    { word: 'duck', hint: '🦆 Swims and quacks', letters: ['d', 'u', 'c', 'k', 'b', 'a'] },
-    { word: 'fish', hint: '🐟 Lives in water', letters: ['f', 'i', 's', 'h', 't', 'a'] },
-    { word: 'lamp', hint: '💡 Gives you light', letters: ['l', 'a', 'm', 'p', 'o', 'e'] },
-    { word: 'tent', hint: '⛺ Camp in this', letters: ['t', 'e', 'n', 't', 'b', 'a'] },
-    { word: 'drum', hint: '🥁 A musical instrument you hit', letters: ['d', 'r', 'u', 'm', 'o', 'a'] },
-    { word: 'frog', hint: '🐸 Green and hops', letters: ['f', 'r', 'o', 'g', 'b', 'e'] },
+    { word: 'raft', hint: '🚣 Floats on water', letters: ['r', 'a', 'f', 't', 's', 'l'] },
+    { word: 'fast', hint: '🏎️ The opposite of slow', letters: ['f', 'a', 's', 't', 'r', 'n'] },
+    { word: 'last', hint: '🏁 At the end', letters: ['l', 'a', 's', 't', 'f', 'm'] },
+    { word: 'mast', hint: '⛵ Tall pole on a boat', letters: ['m', 'a', 's', 't', 'r', 'l'] },
+    { word: 'past', hint: '⏰ Already happened', letters: ['p', 'a', 's', 't', 'f', 'n'] },
+    { word: 'lass', hint: '👧 A young girl', letters: ['l', 'a', 's', 's', 't', 'r'] },
+    { word: 'mass', hint: '⛪ A church service', letters: ['m', 'a', 's', 's', 'l', 't'] },
+    { word: 'pass', hint: '🎫 A ticket to get in', letters: ['p', 'a', 's', 's', 'f', 'l'] },
   ],
   hard: [
-    { word: 'brush', hint: '🪥 Clean your teeth with it', letters: ['b', 'r', 'u', 's', 'h', 'a', 'o'] },
-    { word: 'plant', hint: '🌱 Grows in soil', letters: ['p', 'l', 'a', 'n', 't', 'o', 'e'] },
-    { word: 'blend', hint: '🍹 Mix things together', letters: ['b', 'l', 'e', 'n', 'd', 'a', 'o'] },
-    { word: 'trunk', hint: '🐘 Part of an elephant', letters: ['t', 'r', 'u', 'n', 'k', 'a', 'o'] },
-    { word: 'stamp', hint: '📮 Put on a letter', letters: ['s', 't', 'a', 'm', 'p', 'o', 'e'] },
+    { word: 'staff', hint: '👥 Workers at a place', letters: ['s', 't', 'a', 'f', 'f', 'r', 'l'] },
+    { word: 'raft', hint: '🚣 Float on the water', letters: ['r', 'a', 'f', 't', 's', 'l', 'n'] },
+    { word: 'raft', hint: '🚣 A flat boat', letters: ['r', 'a', 'f', 't', 'm', 's', 'l'] },
+    { word: 'last', hint: '🔚 Final one', letters: ['l', 'a', 's', 't', 'f', 'm', 'n'] },
+    { word: 'fast', hint: '⚡ Very quick', letters: ['f', 'a', 's', 't', 'r', 'l', 'n'] },
   ],
 };
 

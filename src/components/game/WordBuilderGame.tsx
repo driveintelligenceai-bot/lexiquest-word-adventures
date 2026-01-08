@@ -36,15 +36,14 @@ export const WordBuilderGame: React.FC<WordBuilderGameProps> = ({
   
   const { speak, speakPhoneme, playEffect } = useLexiaAudio();
 
-  // Get words from curriculum
+  // Get words from curriculum - ONLY 1.1 words for now
   const words = useMemo(() => {
     const step = CURRICULUM["1"];
-    const allWords: string[] = [];
-    Object.values(step.substeps).forEach(sub => {
-      allWords.push(...sub.words);
-    });
+    // Only use substep 1.1 for Wilson 1.1 compliance
+    const substep = step.substeps["1.1"];
+    if (!substep) return [];
     // Shuffle and pick
-    return allWords.sort(() => Math.random() - 0.5).slice(0, questionsCount);
+    return [...substep.words].sort(() => Math.random() - 0.5).slice(0, questionsCount);
   }, [questionsCount, wilsonStep]);
 
   const currentWord = words[questionIndex] || '';
