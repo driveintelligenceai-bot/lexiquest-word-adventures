@@ -3,11 +3,11 @@ import { motion } from 'framer-motion';
 import { Flame, Trophy, Settings, Volume2, Map, User, Award } from 'lucide-react';
 import { useStickyState } from '@/hooks/useStickyState';
 import { useVoiceSettings } from '@/hooks/useVoiceSettings';
-import { LEXIA_REGIONS, applyLexiaTheme } from '@/lib/lexiaTheme';
+import { applyLexiaTheme } from '@/lib/lexiaTheme';
 import { calculateStreak, getTodayStr, getStreakMilestoneMessage, getStreakXpBonus } from '@/lib/streakUtils';
+import { STORY_REGIONS, getRandomTreasure, TreasureReward, getJumbleMonster } from '@/lib/storyData';
 
 // Game components
-import { WorldMap } from '@/components/game/WorldMap';
 import { SoundMatchGame } from '@/components/game/SoundMatchGame';
 import { WordBuilderGame } from '@/components/game/WordBuilderGame';
 import { RhymeHuntGame } from '@/components/game/RhymeHuntGame';
@@ -19,6 +19,9 @@ import { EnhancedOnboarding } from '@/components/game/EnhancedOnboarding';
 import { ProfileScreen } from '@/components/game/ProfileScreen';
 import { AvatarWithAccessories } from '@/components/lexi/AvatarWithAccessories';
 import { DailyQuests, generateDailyQuests, DailyQuest } from '@/components/game/DailyQuests';
+import { StoryWorldMap } from '@/components/game/StoryWorldMap';
+import { TreasureFoundModal } from '@/components/game/TreasureFoundModal';
+import { JumbleMonsterModal } from '@/components/game/JumbleMonsterModal';
 
 interface LexiaGameState {
   hasOnboarded: boolean;
@@ -80,8 +83,12 @@ const LexiaHome: React.FC = () => {
   const [questResults, setQuestResults] = useState<any>(null);
   const [currentQuestType, setCurrentQuestType] = useState<QuestType>('sound');
   const [streakMessage, setStreakMessage] = useState<string | null>(null);
+  const [foundTreasure, setFoundTreasure] = useState<TreasureReward | null>(null);
+  const [showMonster, setShowMonster] = useState(false);
+  const [monsterDefeated, setMonsterDefeated] = useState(false);
   const { speak, settings: voiceSettings } = useVoiceSettings();
   
+  const currentRegion = STORY_REGIONS[state.progress.currentRegion] || STORY_REGIONS.phoneme_forest;
   const dailyQuests = generateDailyQuests(
     state.progress.wilsonStep,
     state.character.ageGroup,
@@ -180,11 +187,17 @@ const LexiaHome: React.FC = () => {
 
   const handleQuestComplete = (results: any) => {
     const baseXp = 50;
+    const accuracy = results.total > 0 ? (results.correct / results.total) * 100 : 0;
     const accuracyBonus = results.correct === results.total ? 25 : 
                           results.correct >= results.total * 0.8 ? 10 : 0;
     const noHintBonus = results.hintsUsed === 0 ? 15 : 0;
-    const streakBonus = getStreakXpBonus(state.progress.streak);
-    const xpEarned = baseXp + accuracyBonus + noHintBonus + streakBonus;
+    const streakBonusXp = getStreakXpBonus(state.progress.streak);
+    
+    // Check for treasure!
+    const treasure = getRandomTreasure(accuracy);
+    const treasureXp = treasure?.xpBonus || 0;
+    
+    const xpEarned = baseXp + accuracyBonus + noHintBonus + streakBonusXp + treasureXp;
 
     const newXp = state.progress.xp + xpEarned;
     const newLevel = Math.floor(newXp / 100) + 1;
@@ -204,12 +217,23 @@ const LexiaHome: React.FC = () => {
       playEffect('levelUp');
     }
 
-    setQuestResults({ ...results, xpEarned, streakBonus, leveledUp, newLevel });
+    // Show treasure if found
+    if (treasure) {
+      setFoundTreasure(treasure);
+    }
+
+    setQuestResults({ ...results, xpEarned, streakBonus: streakBonusXp, leveledUp, newLevel, accuracy, treasure });
     setView('victory');
   };
 
   const handleContinue = () => {
+    // Check if should trigger Jumble Monster encounter
+    if (questResults?.accuracy >= 80 && Math.random() < 0.3) {
+      setMonsterDefeated(true);
+      setShowMonster(true);
+    }
     setQuestResults(null);
+    setFoundTreasure(null);
     setView('home');
   };
 
@@ -336,31 +360,32 @@ const LexiaHome: React.FC = () => {
     );
   }
 
-  // Map View
+  // Map View - Now with Story World Map
   if (view === 'map') {
     return (
-      <div className="min-h-screen bg-background p-6 pb-32">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-black">Kingdom of Lexia</h1>
+      <div className="min-h-screen bg-background p-4 pb-32 safe-area-inset">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-xl font-black">Word Wonderland</h1>
           <button
             onClick={() => setView('home')}
             className="h-12 w-12 bg-muted rounded-full flex items-center justify-center active:scale-95"
+            aria-label="Close map"
           >
             ✕
           </button>
         </div>
         
-        <WorldMap
+        <StoryWorldMap
           currentRegion={state.progress.currentRegion}
           currentLevel={state.progress.level}
-          unlockedRegions={['phoneme_forest']}
+          completedRegions={[]}
           onSelectRegion={(region) => {
             setState(prev => ({
               ...prev,
               progress: { ...prev.progress, currentRegion: region }
             }));
-            speak(LEXIA_REGIONS[region as keyof typeof LEXIA_REGIONS].name);
           }}
+          onSpeak={speak}
         />
       </div>
     );
@@ -368,7 +393,26 @@ const LexiaHome: React.FC = () => {
 
   // Home View
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="min-h-screen bg-background pb-32 safe-area-inset">
+      {/* Treasure Found Modal */}
+      {foundTreasure && (
+        <TreasureFoundModal
+          treasure={foundTreasure}
+          onClose={() => setFoundTreasure(null)}
+          onSpeak={speak}
+        />
+      )}
+
+      {/* Jumble Monster Encounter */}
+      {showMonster && (
+        <JumbleMonsterModal
+          encounter={getJumbleMonster(state.progress.level)}
+          isDefeated={monsterDefeated}
+          onClose={() => setShowMonster(false)}
+          onSpeak={speak}
+        />
+      )}
+
       {/* Streak Milestone Toast */}
       {streakMessage && (
         <motion.div
@@ -450,14 +494,14 @@ const LexiaHome: React.FC = () => {
         >
           <div className="flex items-center gap-4 mb-4">
             <span className="text-5xl">
-              {LEXIA_REGIONS[state.progress.currentRegion as keyof typeof LEXIA_REGIONS]?.icon}
+              {currentRegion.icon}
             </span>
             <div>
               <h2 className="text-xl font-bold">
-                {LEXIA_REGIONS[state.progress.currentRegion as keyof typeof LEXIA_REGIONS]?.name}
+                {currentRegion.name}
               </h2>
               <p className="text-sm text-muted-foreground">
-                {LEXIA_REGIONS[state.progress.currentRegion as keyof typeof LEXIA_REGIONS]?.description}
+                {currentRegion.description}
               </p>
             </div>
           </div>

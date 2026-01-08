@@ -87,11 +87,26 @@
     font-family: 'Lexend', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Prevent iOS zoom on input focus */
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "ss01", "ss02";
+  }
+
+  /* iOS Zoom Fix - minimum 16px on inputs */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+
+  /* Safe area padding for notched devices */
+  .safe-area-inset {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 }
 
@@ -148,11 +163,24 @@
     @apply bg-tutor-card border border-primary/10 rounded-3xl;
   }
 
-  /* Thumb-safe icon buttons (>= 44px) */
+  /* Thumb-safe icon buttons (>= 44px per Apple HIG) */
   .icon-btn {
-    @apply h-11 w-11 inline-flex items-center justify-center rounded-full;
+    @apply h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-full;
     @apply bg-muted text-muted-foreground hover:bg-muted/80 transition-colors;
     @apply active:scale-95;
+    touch-action: manipulation;
+  }
+
+  /* Ensure all buttons meet 44px minimum */
+  button, [role="button"] {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  /* Touch-friendly tap targets */
+  .tap-target {
+    @apply min-h-[48px] min-w-[48px];
+    touch-action: manipulation;
   }
 }
 
