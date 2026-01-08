@@ -1,14 +1,15 @@
 import React from 'react';
-import { Flame, Trophy, Settings, School, Home, Volume2 } from 'lucide-react';
-import { LexiPet } from './LexiPet';
+import { Flame, Trophy, Settings, School, Home, Volume2, Eye } from 'lucide-react';
 import { QuestCard, Quest } from './QuestCard';
 import { speak } from '@/lib/speech';
 
 interface StudentData {
   name: string;
+  avatar: string;
   step: string;
   level: number;
   xp: number;
+  dailyGoal: number;
 }
 
 interface StudentDashboardProps {
@@ -18,6 +19,7 @@ interface StudentDashboardProps {
   quests: Quest[];
   onQuestSelect: (quest: Quest) => void;
   onSettingsClick: () => void;
+  onAccessibilityClick: () => void;
 }
 
 export const StudentDashboard: React.FC<StudentDashboardProps> = ({
@@ -26,10 +28,17 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   dailyProgress,
   quests,
   onQuestSelect,
-  onSettingsClick
+  onSettingsClick,
+  onAccessibilityClick,
 }) => {
   const tutorQuests = quests.filter(q => q.role === 'tutor');
   const homeQuests = quests.filter(q => q.role === 'home');
+  
+  // Calculate daily XP progress
+  const todayXp = quests
+    .filter(q => dailyProgress[q.id])
+    .reduce((sum, q) => sum + q.points, 0);
+  const goalProgress = Math.min((todayXp / student.dailyGoal) * 100, 100);
 
   return (
     <div className="min-h-screen bg-background font-sans pb-32">
@@ -37,16 +46,18 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       <header className="bg-card p-6 rounded-b-[40px] shadow-sm border-b-4 border-border sticky top-0 z-40">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
-            <LexiPet level={student.level} />
+            <div className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center text-4xl shadow-sm border-2 border-accent/20 animate-bounce-slow">
+              {student.avatar || '🦊'}
+            </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-black text-foreground">{student.name}</h1>
                 <button
                   onClick={() => speak(`Hello ${student.name}!`)}
-                  className="icon-btn"
+                  className="icon-btn h-8 w-8"
                   aria-label="Hear greeting"
                 >
-                  <Volume2 size={18} />
+                  <Volume2 size={16} />
                 </button>
               </div>
               <div className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md inline-block mt-1">
@@ -55,13 +66,41 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={onSettingsClick}
-            className="h-12 w-12 inline-flex items-center justify-center rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition-colors active:scale-95"
-            aria-label="Open tutor access"
-          >
-            <Settings size={20} />
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={onAccessibilityClick}
+              className="h-12 w-12 inline-flex items-center justify-center rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition-colors active:scale-95"
+              aria-label="Accessibility settings"
+            >
+              <Eye size={20} />
+            </button>
+            <button
+              onClick={onSettingsClick}
+              className="h-12 w-12 inline-flex items-center justify-center rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition-colors active:scale-95"
+              aria-label="Open tutor access"
+            >
+              <Settings size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Daily Goal Progress */}
+        <div className="bg-foreground/5 rounded-2xl p-4 mb-4">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-bold text-muted-foreground">Today's Goal</span>
+            <span className="text-sm font-black text-primary">{todayXp} / {student.dailyGoal} XP</span>
+          </div>
+          <div className="h-3 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-primary transition-all duration-500 rounded-full"
+              style={{ width: `${goalProgress}%` }}
+            />
+          </div>
+          {goalProgress >= 100 && (
+            <div className="text-center text-sm font-bold text-primary mt-2 animate-fade-in">
+              🎉 Goal Complete!
+            </div>
+          )}
         </div>
 
         {/* Stats Bar */}
@@ -100,10 +139,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </h3>
             <button
               onClick={() => speak('Morning quests with your tutor')}
-              className="icon-btn"
+              className="icon-btn h-8 w-8"
               aria-label="Hear morning section"
             >
-              <Volume2 size={18} />
+              <Volume2 size={14} />
             </button>
           </div>
           <div className="space-y-3">
@@ -129,10 +168,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </h3>
             <button
               onClick={() => speak('Evening quests with your parent')}
-              className="icon-btn"
+              className="icon-btn h-8 w-8"
               aria-label="Hear evening section"
             >
-              <Volume2 size={18} />
+              <Volume2 size={14} />
             </button>
           </div>
           <div className="space-y-3">

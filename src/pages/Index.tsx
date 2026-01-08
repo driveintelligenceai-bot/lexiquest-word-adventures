@@ -1,54 +1,117 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Headphones, LayoutGrid, School, Zap, BookOpen, Heart } from 'lucide-react';
 import { useStickyState } from '@/hooks/useStickyState';
 import { CURRICULUM } from '@/lib/curriculum';
+import { Onboarding } from '@/components/lexi/Onboarding';
 import { StudentDashboard } from '@/components/lexi/StudentDashboard';
 import { TutorPortal } from '@/components/lexi/TutorPortal';
 import { QuestActivity } from '@/components/lexi/QuestActivity';
 import { ParentGate } from '@/components/lexi/ParentGate';
 import { RewardModal } from '@/components/lexi/RewardModal';
 import { Confetti } from '@/components/lexi/Confetti';
+import { AccessibilityPanel, defaultAccessibilitySettings, AccessibilitySettings } from '@/components/lexi/AccessibilityPanel';
 import { Quest } from '@/components/lexi/QuestCard';
+import { getDateKey, isNewDay } from '@/lib/dayUtils';
 
 interface GameState {
+  hasOnboarded: boolean;
   student: {
     name: string;
+    avatar: string;
     step: string;
     level: number;
     xp: number;
+    dailyGoal: number;
   };
   streak: number;
+  lastActiveDate: string;
   dailyProgress: Record<string, boolean>;
 }
 
 const DEFAULT_STATE: GameState = {
-  student: { name: 'Explorer', step: '1.1', level: 1, xp: 0 },
-  streak: 5,
+  hasOnboarded: false,
+  student: { name: 'Explorer', avatar: '🦊', step: '1.1', level: 1, xp: 0, dailyGoal: 50 },
+  streak: 0,
+  lastActiveDate: '',
   dailyProgress: { t1: false, t2: false, t3: false, h1: false, h2: false, h3: false }
 };
 
+const DEFAULT_PROGRESS = { t1: false, t2: false, t3: false, h1: false, h2: false, h3: false };
+
 const Index = () => {
-  const [state, setState] = useStickyState<GameState>(DEFAULT_STATE, 'lexiquest_v1_prod');
+  const [state, setState] = useStickyState<GameState>(DEFAULT_STATE, 'lexiquest_v2_prod');
+  const [accessibility, setAccessibility] = useStickyState<AccessibilitySettings>(
+    defaultAccessibilitySettings, 
+    'lexiquest_accessibility'
+  );
+  const [tutorNotes, setTutorNotes] = useStickyState<Record<string, string>>({}, 'lexiquest_tutor_notes');
+  
   const [view, setView] = useState<'student' | 'tutor' | 'quest'>('student');
   const [activeQuest, setActiveQuest] = useState<Quest | null>(null);
   const [showGate, setShowGate] = useState(false);
+  const [showAccessibility, setShowAccessibility] = useState(false);
   const [reward, setReward] = useState<{ points: number; isBoss: boolean } | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+
+  // Daily reset check on mount
+  useEffect(() => {
+    if (state.hasOnboarded && isNewDay(state.lastActiveDate)) {
+      const today = getDateKey();
+      const allCompleteYesterday = Object.values(state.dailyProgress).every(Boolean);
+      
+      setState(prev => ({
+        ...prev,
+        lastActiveDate: today,
+        dailyProgress: { ...DEFAULT_PROGRESS },
+        // Keep streak if they completed all quests yesterday, otherwise check if same day
+        streak: allCompleteYesterday ? prev.streak : (prev.lastActiveDate === '' ? prev.streak : 0)
+      }));
+    }
+  }, [state.hasOnboarded, state.lastActiveDate]);
+
+  // Apply accessibility settings
+  useEffect(() => {
+    const root = document.documentElement;
+    
+    // Font size
+    const sizes = { small: '14px', medium: '16px', large: '20px' };
+    root.style.fontSize = sizes[accessibility.fontSize];
+    
+    // Dyslexia font
+    if (accessibility.dyslexiaFont) {
+      root.style.fontFamily = 'OpenDyslexic, Lexend, system-ui, sans-serif';
+    } else {
+      root.style.fontFamily = 'Lexend, system-ui, sans-serif';
+    }
+  }, [accessibility]);
 
   // Get current step data
   const stepData = CURRICULUM["1"].substeps[state.student.step] || CURRICULUM["1"].substeps["1.1"];
 
   // Define 3+3 Quests
   const QUESTS: Quest[] = [
-    // Morning (Tutor)
     { id: 't1', role: 'tutor', type: 'drill', title: 'Sound Drill', icon: Headphones, points: 5, content: 'Review Sound Cards', data: stepData.tiles },
     { id: 't2', role: 'tutor', type: 'build', title: 'Word Builder', icon: LayoutGrid, points: 10, content: 'Build 3 Words', data: stepData },
     { id: 't3', role: 'tutor', type: 'check', title: 'Tutor Check', icon: School, points: 15, content: 'Lesson Complete', data: null },
-    // Evening (Home)
     { id: 'h1', role: 'home', type: 'read', title: 'Tap & Read', icon: Zap, points: 5, content: `Read: ${stepData.words[0]}`, data: stepData.words[0] },
     { id: 'h2', role: 'home', type: 'read', title: 'Fluency', icon: BookOpen, points: 10, content: stepData.sentences[0], data: stepData.sentences[0] },
     { id: 'h3', role: 'home', type: 'check', title: 'High Five', icon: Heart, points: 15, content: 'Sign off with Parent', data: null }
   ];
+
+  const handleOnboardingComplete = (data: { name: string; avatar: string; step: string; dailyGoal: number }) => {
+    setState(prev => ({
+      ...prev,
+      hasOnboarded: true,
+      lastActiveDate: getDateKey(),
+      student: {
+        ...prev.student,
+        name: data.name,
+        avatar: data.avatar,
+        step: data.step,
+        dailyGoal: data.dailyGoal,
+      }
+    }));
+  };
 
   const handleQuestSelect = (quest: Quest) => {
     if (state.dailyProgress[quest.id]) return;
@@ -91,14 +154,34 @@ const Index = () => {
     }));
   };
 
+  const handleSaveNote = (stepId: string, note: string) => {
+    setTutorNotes(prev => ({ ...prev, [stepId]: note }));
+  };
+
+  const handleDeleteNote = (stepId: string) => {
+    setTutorNotes(prev => {
+      const updated = { ...prev };
+      delete updated[stepId];
+      return updated;
+    });
+  };
+
+  // Show onboarding if not completed
+  if (!state.hasOnboarded) {
+    return <Onboarding onComplete={handleOnboardingComplete} />;
+  }
+
   // Render Views
   if (view === 'tutor') {
     return (
       <TutorPortal
         student={state.student}
         streak={state.streak}
+        notes={tutorNotes}
         onClose={() => setView('student')}
         onStepChange={handleStepChange}
+        onSaveNote={handleSaveNote}
+        onDeleteNote={handleDeleteNote}
       />
     );
   }
@@ -123,6 +206,7 @@ const Index = () => {
         quests={QUESTS}
         onQuestSelect={handleQuestSelect}
         onSettingsClick={handleSettingsClick}
+        onAccessibilityClick={() => setShowAccessibility(true)}
       />
 
       {/* Parent Gate for Tutor Access */}
@@ -134,6 +218,15 @@ const Index = () => {
             setShowGate(false);
             setView('tutor');
           }}
+        />
+      )}
+
+      {/* Accessibility Panel */}
+      {showAccessibility && (
+        <AccessibilityPanel
+          settings={accessibility}
+          onChange={setAccessibility}
+          onClose={() => setShowAccessibility(false)}
         />
       )}
 
