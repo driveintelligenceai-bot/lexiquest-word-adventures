@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Flame, Trophy, Settings, Volume2, Map, User, Award, Users, VolumeX, Music, ShoppingBag } from 'lucide-react';
+import { Flame, Trophy, Settings, Volume2, Map, User, Award, Users, VolumeX, Music, ShoppingBag, Gift } from 'lucide-react';
 import { useStickyState } from '@/hooks/useStickyState';
 import { useVoiceSettings } from '@/hooks/useVoiceSettings';
 import { applyLexiaTheme } from '@/lib/lexiaTheme';
@@ -32,6 +32,7 @@ import { AchievementUnlockModal } from '@/components/game/AchievementUnlockModal
 import { RewardStore } from '@/components/lexi/RewardStore';
 import { SettingsPanel, SoundSettings, AccessibilitySettings as SettingsAccessibility } from '@/components/game/SettingsPanel';
 import { FocusModeView } from '@/components/game/FocusModeView';
+import { DailyLoginRewards, LoginRewardsState } from '@/components/game/DailyLoginRewards';
 
 interface LexiaGameState {
   hasOnboarded: boolean;
@@ -75,6 +76,7 @@ interface LexiaGameState {
   xpHistory: Record<string, number>;
   sessionHistory: Record<string, number>;
   unlockedAchievements: string[];
+  loginRewards: LoginRewardsState;
 }
 
 const DEFAULT_STATE: LexiaGameState = {
@@ -114,6 +116,12 @@ const DEFAULT_STATE: LexiaGameState = {
   xpHistory: {},
   sessionHistory: {},
   unlockedAchievements: [],
+  loginRewards: {
+    lastClaimDate: '',
+    consecutiveDays: 0,
+    totalWeeksCompleted: 0,
+    claimedToday: false,
+  },
 };
 
 type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'rhymeHunt' | 'memoryMatch' | 'syllableSort' | 'spelling' | 'vocabulary' | 'victory' | 'profile' | 'settings' | 'parent' | 'trophies';
@@ -131,6 +139,7 @@ const LexiaHome: React.FC = () => {
   const [newAchievement, setNewAchievement] = useState<any>(null);
   const [showStore, setShowStore] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showLoginRewards, setShowLoginRewards] = useState(false);
   const { speak, settings: voiceSettings, updateSettings: updateVoiceSettings } = useVoiceSettings();
   
   const currentRegion = STORY_REGIONS[state.progress.currentRegion] || STORY_REGIONS.phoneme_forest;
@@ -429,6 +438,42 @@ const LexiaHome: React.FC = () => {
     }));
   };
 
+  // Login rewards handlers
+  const handleClaimLoginReward = (xp: number, bonusItem?: string) => {
+    setState(prev => ({
+      ...prev,
+      progress: {
+        ...prev.progress,
+        xp: prev.progress.xp + xp,
+      },
+      streakFreezeTokens: bonusItem === 'streak_freeze' 
+        ? prev.streakFreezeTokens + 1 
+        : prev.streakFreezeTokens,
+    }));
+    playEffect('treasure');
+  };
+
+  const handleUpdateLoginState = (loginState: LoginRewardsState) => {
+    setState(prev => ({
+      ...prev,
+      loginRewards: loginState,
+    }));
+  };
+
+  // Check for unclaimed daily reward on mount
+  useEffect(() => {
+    if (state.hasOnboarded && state.loginRewards) {
+      const today = getTodayStr();
+      if (state.loginRewards.lastClaimDate !== today) {
+        // Show login rewards modal after a short delay
+        const timer = setTimeout(() => {
+          setShowLoginRewards(true);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [state.hasOnboarded]);
+
   const handleAccessibilitySettingsChange = (updates: Partial<SettingsAccessibility>) => {
     setState(prev => ({
       ...prev,
@@ -698,6 +743,18 @@ const LexiaHome: React.FC = () => {
         />
       )}
 
+      {/* Daily Login Rewards Modal */}
+      {showLoginRewards && (
+        <DailyLoginRewards
+          loginState={state.loginRewards}
+          currentXp={state.progress.xp}
+          onClose={() => setShowLoginRewards(false)}
+          onClaimReward={handleClaimLoginReward}
+          onUpdateLoginState={handleUpdateLoginState}
+          soundEnabled={state.settings.masterVolume && state.settings.soundEffectsEnabled}
+        />
+      )}
+
       {/* Achievement Unlock Modal */}
       <AchievementUnlockModal
         achievement={newAchievement}
@@ -938,6 +995,18 @@ const LexiaHome: React.FC = () => {
           <span className="text-xs font-bold">Quests</span>
         </button>
         <button
+          onClick={() => { playEffect('tap'); setShowLoginRewards(true); }}
+          className={`relative flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${showLoginRewards ? 'text-primary' : 'text-muted-foreground'}`}
+          aria-label="Daily rewards"
+        >
+          <Gift size={22} />
+          <span className="text-xs font-bold">Daily</span>
+          {/* Unclaimed reward indicator */}
+          {state.loginRewards?.lastClaimDate !== getTodayStr() && (
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full animate-pulse" />
+          )}
+        </button>
+        <button
           onClick={() => { playEffect('tap'); setShowStore(true); }}
           className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${showStore ? 'text-primary' : 'text-muted-foreground'}`}
           aria-label="Open reward store"
@@ -954,12 +1023,12 @@ const LexiaHome: React.FC = () => {
           <span className="text-xs font-bold">Trophies</span>
         </button>
         <button
-          onClick={() => { playEffect('tap'); setView('map'); }}
-          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${(view as GameView) === 'map' ? 'text-primary' : 'text-muted-foreground'}`}
-          aria-label="View world map"
+          onClick={() => { playEffect('tap'); setView('profile'); }}
+          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${(view as GameView) === 'profile' ? 'text-primary' : 'text-muted-foreground'}`}
+          aria-label="View profile"
         >
-          <Map size={22} />
-          <span className="text-xs font-bold">Map</span>
+          <User size={22} />
+          <span className="text-xs font-bold">Profile</span>
         </button>
         <button
           onClick={() => { playEffect('tap'); setView('profile'); }}
