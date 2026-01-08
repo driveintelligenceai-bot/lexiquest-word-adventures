@@ -31,6 +31,7 @@ import { TrophyCollection, checkNewAchievements, ACHIEVEMENTS, AchievementStats 
 import { AchievementUnlockModal } from '@/components/game/AchievementUnlockModal';
 import { RewardStore } from '@/components/lexi/RewardStore';
 import { SettingsPanel, SoundSettings, AccessibilitySettings as SettingsAccessibility } from '@/components/game/SettingsPanel';
+import { FocusModeView } from '@/components/game/FocusModeView';
 
 interface LexiaGameState {
   hasOnboarded: boolean;
@@ -65,6 +66,7 @@ interface LexiaGameState {
     reduceMotion: boolean;
     highContrast: boolean;
     speechRate: number;
+    focusMode: boolean;
   };
   ownedItems: string[];
   completedQuests: string[];
@@ -103,6 +105,7 @@ const DEFAULT_STATE: LexiaGameState = {
     reduceMotion: false,
     highContrast: false,
     speechRate: 0.85,
+    focusMode: false,
   },
   ownedItems: [],
   completedQuests: [],
@@ -617,6 +620,47 @@ const LexiaHome: React.FC = () => {
     );
   }
 
+  // Focus Mode - Simplified ADHD-friendly view
+  if (state.settings.focusMode && view === 'home') {
+    return (
+      <>
+        {/* Settings Panel in Focus Mode */}
+        {showSettings && (
+          <SettingsPanel
+            soundSettings={{
+              masterVolume: state.settings.masterVolume,
+              voiceEnabled: state.settings.voiceEnabled,
+              soundEffectsEnabled: state.settings.soundEffectsEnabled,
+              musicEnabled: state.settings.musicEnabled,
+            }}
+            accessibilitySettings={{
+              fontSize: state.settings.fontSize,
+              dyslexiaFont: state.settings.dyslexiaFont,
+              reduceMotion: state.settings.reduceMotion,
+              highContrast: state.settings.highContrast,
+              speechRate: state.settings.speechRate,
+              focusMode: state.settings.focusMode,
+            }}
+            onSoundChange={handleSoundSettingsChange}
+            onAccessibilityChange={handleAccessibilitySettingsChange}
+            onClose={() => setShowSettings(false)}
+            onTestVoice={() => speak("Hello! I'm your reading friend. Let's learn together!")}
+          />
+        )}
+        <FocusModeView
+          characterName={state.character.name}
+          characterAvatar={state.character.avatar}
+          streak={state.progress.streak}
+          onStartQuest={(questType) => handleStartQuest(questType as QuestType)}
+          onOpenSettings={() => setShowSettings(true)}
+          onSpeak={speakIfEnabled}
+          soundEnabled={state.settings.masterVolume}
+          onToggleSound={() => handleSoundSettingsChange({ masterVolume: !state.settings.masterVolume })}
+        />
+      </>
+    );
+  }
+
   // Home View
   return (
     <div className="min-h-screen bg-background pb-32 safe-area-inset">
@@ -635,6 +679,7 @@ const LexiaHome: React.FC = () => {
             reduceMotion: state.settings.reduceMotion,
             highContrast: state.settings.highContrast,
             speechRate: state.settings.speechRate,
+            focusMode: state.settings.focusMode,
           }}
           onSoundChange={handleSoundSettingsChange}
           onAccessibilityChange={handleAccessibilitySettingsChange}

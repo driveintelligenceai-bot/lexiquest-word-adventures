@@ -21,6 +21,7 @@ export interface AccessibilitySettings {
   reduceMotion: boolean;
   highContrast: boolean;
   speechRate: number;
+  focusMode: boolean;  // ADHD-friendly: one task at a time, minimal UI
 }
 
 interface SettingsPanelProps {
@@ -307,7 +308,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </div>
 
               {/* High Contrast */}
-              <div className="bg-card rounded-xl p-4 border-2 border-border">
+              <div className="bg-card rounded-xl p-4 border-2 border-border mb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="relative">
@@ -321,6 +322,23 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   <ToggleSwitch
                     enabled={accessibilitySettings.highContrast}
                     onChange={(enabled) => onAccessibilityChange({ highContrast: enabled })}
+                  />
+                </div>
+              </div>
+
+              {/* Focus Mode - ADHD Friendly */}
+              <div className="bg-accent/10 rounded-xl p-4 border-2 border-accent/30">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🎯</span>
+                    <div>
+                      <div className="font-bold text-accent">Focus Mode</div>
+                      <div className="text-xs text-muted-foreground">One task, minimal distractions</div>
+                    </div>
+                  </div>
+                  <ToggleSwitch
+                    enabled={accessibilitySettings.focusMode}
+                    onChange={(enabled) => onAccessibilityChange({ focusMode: enabled })}
                   />
                 </div>
               </div>
@@ -400,4 +418,5 @@ export const defaultAccessibilitySettings: AccessibilitySettings = {
   reduceMotion: false,
   highContrast: false,
   speechRate: 0.85,
+  focusMode: false,
 };
