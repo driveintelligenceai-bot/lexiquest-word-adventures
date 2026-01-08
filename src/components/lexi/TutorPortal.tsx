@@ -2,6 +2,7 @@ import React from 'react';
 import { X, GraduationCap, CheckCircle, Lock, Zap, Flame } from 'lucide-react';
 import { LexiPet } from './LexiPet';
 import { TutorNotes } from './TutorNotes';
+import { WeeklyXpChart } from './WeeklyXpChart';
 import { CURRICULUM } from '@/lib/curriculum';
 
 interface StudentData {
@@ -16,6 +17,7 @@ interface TutorPortalProps {
   student: StudentData;
   streak: number;
   notes: Record<string, string>;
+  xpHistory: Record<string, number>;
   onClose: () => void;
   onStepChange: (stepId: string) => void;
   onSaveNote: (stepId: string, note: string) => void;
@@ -26,6 +28,7 @@ export const TutorPortal: React.FC<TutorPortalProps> = ({
   student,
   streak,
   notes,
+  xpHistory,
   onClose,
   onStepChange,
   onSaveNote,
@@ -81,6 +84,9 @@ export const TutorPortal: React.FC<TutorPortalProps> = ({
           onSave={onSaveNote}
           onDelete={onDeleteNote}
         />
+
+        {/* Weekly XP Chart */}
+        <WeeklyXpChart xpHistory={xpHistory} />
 
         {/* Curriculum Assignment */}
         <div className="tutor-card p-6">

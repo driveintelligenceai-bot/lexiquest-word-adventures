@@ -8,10 +8,12 @@ import { TutorPortal } from '@/components/lexi/TutorPortal';
 import { QuestActivity } from '@/components/lexi/QuestActivity';
 import { ParentGate } from '@/components/lexi/ParentGate';
 import { RewardModal } from '@/components/lexi/RewardModal';
+import { RewardStore } from '@/components/lexi/RewardStore';
 import { Confetti } from '@/components/lexi/Confetti';
 import { AccessibilityPanel, defaultAccessibilitySettings, AccessibilitySettings } from '@/components/lexi/AccessibilityPanel';
 import { Quest } from '@/components/lexi/QuestCard';
 import { getDateKey, isNewDay } from '@/lib/dayUtils';
+import { sounds } from '@/lib/sounds';
 
 interface GameState {
   hasOnboarded: boolean;
@@ -26,6 +28,9 @@ interface GameState {
   streak: number;
   lastActiveDate: string;
   dailyProgress: Record<string, boolean>;
+  xpHistory: Record<string, number>;
+  ownedItems: string[];
+  activePet?: string;
 }
 
 const DEFAULT_STATE: GameState = {
@@ -33,13 +38,16 @@ const DEFAULT_STATE: GameState = {
   student: { name: 'Explorer', avatar: '🦊', step: '1.1', level: 1, xp: 0, dailyGoal: 50 },
   streak: 0,
   lastActiveDate: '',
-  dailyProgress: { t1: false, t2: false, t3: false, h1: false, h2: false, h3: false }
+  dailyProgress: { t1: false, t2: false, t3: false, h1: false, h2: false, h3: false },
+  xpHistory: {},
+  ownedItems: [],
+  activePet: undefined,
 };
 
 const DEFAULT_PROGRESS = { t1: false, t2: false, t3: false, h1: false, h2: false, h3: false };
 
 const Index = () => {
-  const [state, setState] = useStickyState<GameState>(DEFAULT_STATE, 'lexiquest_v2_prod');
+  const [state, setState] = useStickyState<GameState>(DEFAULT_STATE, 'lexiquest_v3_prod');
   const [accessibility, setAccessibility] = useStickyState<AccessibilitySettings>(
     defaultAccessibilitySettings, 
     'lexiquest_accessibility'
@@ -50,6 +58,7 @@ const Index = () => {
   const [activeQuest, setActiveQuest] = useState<Quest | null>(null);
   const [showGate, setShowGate] = useState(false);
   const [showAccessibility, setShowAccessibility] = useState(false);
+  const [showStore, setShowStore] = useState(false);
   const [reward, setReward] = useState<{ points: number; isBoss: boolean } | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
 
@@ -115,6 +124,7 @@ const Index = () => {
 
   const handleQuestSelect = (quest: Quest) => {
     if (state.dailyProgress[quest.id]) return;
+    sounds.tap();
     setActiveQuest(quest);
     setView('quest');
   };
@@ -126,12 +136,27 @@ const Index = () => {
     const allComplete = Object.values(newProgress).every(Boolean);
     const newXp = state.student.xp + quest.points;
     const newLevel = Math.floor(newXp / 50) + 1;
+    const today = getDateKey();
+
+    // Update XP history for the chart
+    const newXpHistory = {
+      ...state.xpHistory,
+      [today]: (state.xpHistory[today] || 0) + quest.points,
+    };
+
+    // Check for level up
+    if (newLevel > state.student.level) {
+      sounds.levelUp();
+    } else {
+      sounds.questComplete();
+    }
 
     setState(prev => ({
       ...prev,
       student: { ...prev.student, xp: newXp, level: newLevel },
       dailyProgress: newProgress,
-      streak: allComplete ? prev.streak + 1 : prev.streak
+      streak: allComplete ? prev.streak + 1 : prev.streak,
+      xpHistory: newXpHistory,
     }));
 
     setView('student');
@@ -144,8 +169,25 @@ const Index = () => {
   };
 
   const handleSettingsClick = () => {
+    sounds.tap();
     setShowGate(true);
   };
+
+  const handleStoreClick = () => {
+    sounds.tap();
+    setShowStore(true);
+  };
+
+  const handlePurchase = (itemId: string, cost: number) => {
+    setState(prev => ({
+      ...prev,
+      student: { ...prev.student, xp: prev.student.xp - cost },
+      ownedItems: [...prev.ownedItems, itemId],
+      // Auto-equip pet if purchased
+      activePet: itemId.startsWith('pet_') ? itemId : prev.activePet,
+    }));
+  };
+
 
   const handleStepChange = (stepId: string) => {
     setState(prev => ({
@@ -178,6 +220,7 @@ const Index = () => {
         student={state.student}
         streak={state.streak}
         notes={tutorNotes}
+        xpHistory={state.xpHistory}
         onClose={() => setView('student')}
         onStepChange={handleStepChange}
         onSaveNote={handleSaveNote}
@@ -204,9 +247,11 @@ const Index = () => {
         streak={state.streak}
         dailyProgress={state.dailyProgress}
         quests={QUESTS}
+        activePet={state.activePet}
         onQuestSelect={handleQuestSelect}
         onSettingsClick={handleSettingsClick}
-        onAccessibilityClick={() => setShowAccessibility(true)}
+        onAccessibilityClick={() => { sounds.tap(); setShowAccessibility(true); }}
+        onStoreClick={handleStoreClick}
       />
 
       {/* Parent Gate for Tutor Access */}
@@ -227,6 +272,16 @@ const Index = () => {
           settings={accessibility}
           onChange={setAccessibility}
           onClose={() => setShowAccessibility(false)}
+        />
+      )}
+
+      {/* Reward Store */}
+      {showStore && (
+        <RewardStore
+          currentXp={state.student.xp}
+          ownedItems={state.ownedItems}
+          onClose={() => setShowStore(false)}
+          onPurchase={handlePurchase}
         />
       )}
 
