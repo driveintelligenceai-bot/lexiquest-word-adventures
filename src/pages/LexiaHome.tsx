@@ -93,11 +93,10 @@ const LexiaHome: React.FC = () => {
     // Minimal audio feedback
   };
 
-  // Apply theme and audio settings on mount
+  // Apply theme on mount
   useEffect(() => {
     applyLexiaTheme(state.settings.theme);
-    setRate(state.settings.audioSpeed);
-  }, [state.settings.theme, state.settings.audioSpeed]);
+  }, [state.settings.theme]);
 
   // Check and update streak on mount
   useEffect(() => {
@@ -503,13 +502,16 @@ const LexiaHome: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Whisper */}
-        <Whisper
+        {/* NPC Guide */}
+        <NPCGuide
+          character="whisper"
+          mood="idle"
           message={state.progress.streak > 0 
             ? `Keep your ${state.progress.streak} day streak going!` 
             : "Choose a quest to start your adventure!"
           }
-          variant="idle"
+          onSpeak={speak}
+          position="bottom-left"
         />
       </main>
 
