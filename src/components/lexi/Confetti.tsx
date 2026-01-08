@@ -10,7 +10,7 @@ export const Confetti: React.FC = () => {
     type: Math.floor(Math.random() * 3)
   }));
 
-  const colors = ['text-yellow-400', 'text-blue-400', 'text-pink-400', 'text-green-400'];
+  const colors = ['text-accent', 'text-primary', 'text-destructive', 'text-muted-foreground'];
   const icons = [Star, Sparkles, Heart];
 
   return (

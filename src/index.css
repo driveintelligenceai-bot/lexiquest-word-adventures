@@ -144,7 +144,14 @@
 
   /* Tutor Portal Styles */
   .tutor-card {
-    @apply bg-white/5 border border-white/10 rounded-3xl;
+    @apply bg-tutor-card border border-primary/10 rounded-3xl;
+  }
+
+  /* Thumb-safe icon buttons (>= 44px) */
+  .icon-btn {
+    @apply h-11 w-11 inline-flex items-center justify-center rounded-full;
+    @apply bg-muted text-muted-foreground hover:bg-muted/80 transition-colors;
+    @apply active:scale-95;
   }
 }
 

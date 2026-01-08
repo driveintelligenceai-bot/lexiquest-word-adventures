@@ -56,9 +56,10 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest, isDone, onClick }) 
           <>
             <button
               onClick={handleSpeak}
-              className="p-2 rounded-full bg-muted text-muted-foreground hover:bg-primary/10 transition-colors"
+              className="icon-btn"
+              aria-label="Hear quest title"
             >
-              <Volume2 size={16} />
+              <Volume2 size={18} />
             </button>
             <ChevronRight className="text-muted-foreground group-hover:text-primary transition-colors" />
           </>
