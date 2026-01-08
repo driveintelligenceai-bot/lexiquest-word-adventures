@@ -43,9 +43,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 <h1 className="text-2xl font-black text-foreground">{student.name}</h1>
                 <button
                   onClick={() => speak(`Hello ${student.name}!`)}
-                  className="p-1 rounded-full hover:bg-muted"
+                  className="icon-btn"
+                  aria-label="Hear greeting"
                 >
-                  <Volume2 size={16} className="text-muted-foreground" />
+                  <Volume2 size={18} />
                 </button>
               </div>
               <div className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md inline-block mt-1">
@@ -53,9 +54,11 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               </div>
             </div>
           </div>
+
           <button
             onClick={onSettingsClick}
-            className="p-3 bg-muted rounded-xl hover:bg-muted/80 text-muted-foreground transition-colors"
+            className="h-12 w-12 inline-flex items-center justify-center rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition-colors active:scale-95"
+            aria-label="Open tutor access"
           >
             <Settings size={20} />
           </button>
@@ -72,13 +75,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               <div className="text-[10px] font-bold text-accent/70 uppercase">Streak</div>
             </div>
           </div>
-          <div className="flex-1 bg-purple-100 p-3 rounded-2xl flex items-center gap-3 border-2 border-purple-200">
+          <div className="flex-1 bg-secondary p-3 rounded-2xl flex items-center gap-3 border-2 border-border">
             <div className="bg-card p-2 rounded-xl shadow-sm">
-              <Trophy className="text-purple-500 fill-purple-500" size={20} />
+              <Trophy className="text-primary" size={20} />
             </div>
             <div>
-              <div className="text-xl font-black text-purple-600">{student.xp}</div>
-              <div className="text-[10px] font-bold text-purple-400 uppercase">Total XP</div>
+              <div className="text-xl font-black text-foreground">{student.xp}</div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase">Total XP</div>
             </div>
           </div>
         </div>
@@ -97,9 +100,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </h3>
             <button
               onClick={() => speak('Morning quests with your tutor')}
-              className="p-1 rounded-full hover:bg-muted"
+              className="icon-btn"
+              aria-label="Hear morning section"
             >
-              <Volume2 size={14} className="text-muted-foreground" />
+              <Volume2 size={18} />
             </button>
           </div>
           <div className="space-y-3">
@@ -125,9 +129,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </h3>
             <button
               onClick={() => speak('Evening quests with your parent')}
-              className="p-1 rounded-full hover:bg-muted"
+              className="icon-btn"
+              aria-label="Hear evening section"
             >
-              <Volume2 size={14} className="text-muted-foreground" />
+              <Volume2 size={18} />
             </button>
           </div>
           <div className="space-y-3">

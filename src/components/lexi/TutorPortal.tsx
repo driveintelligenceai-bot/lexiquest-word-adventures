@@ -35,9 +35,10 @@ export const TutorPortal: React.FC<TutorPortalProps> = ({
         </h1>
         <button
           onClick={onClose}
-          className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
+          className="h-12 w-12 inline-flex items-center justify-center rounded-full bg-primary/10 text-primary-foreground hover:bg-primary/20 transition-colors active:scale-95"
+          aria-label="Close tutor portal"
         >
-          <X />
+          <X size={22} />
         </button>
       </div>
 
@@ -57,7 +58,7 @@ export const TutorPortal: React.FC<TutorPortalProps> = ({
               <span className="font-bold">{student.xp} XP</span>
             </div>
             <div className="flex items-center gap-2 justify-end">
-              <Flame className="text-orange-400 fill-orange-400" size={18} />
+              <Flame className="text-accent fill-accent" size={18} />
               <span className="font-bold">{streak} day streak</span>
             </div>
           </div>
@@ -74,10 +75,10 @@ export const TutorPortal: React.FC<TutorPortalProps> = ({
               <button
                 key={sub.id}
                 onClick={() => onStepChange(sub.id)}
-                className={`w-full p-4 rounded-xl text-left flex justify-between items-center transition-all ${
+                className={`w-full p-4 rounded-xl text-left flex justify-between items-center transition-all active:scale-[0.98] ${
                   student.step === sub.id
                     ? 'bg-primary border border-primary/50 shadow-lg'
-                    : 'bg-white/5 border border-white/5 hover:bg-white/10'
+                    : 'bg-tutor-card border border-primary/10 hover:bg-tutor-card/80'
                 }`}
               >
                 <div>
@@ -96,7 +97,7 @@ export const TutorPortal: React.FC<TutorPortalProps> = ({
             {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
               <div
                 key={n}
-                className="p-4 rounded-xl border border-white/5 bg-black/20 opacity-40 flex items-center justify-between"
+                className="p-4 rounded-xl border border-primary/10 bg-tutor-card/40 opacity-40 flex items-center justify-between"
               >
                 <span className="font-bold text-sm">
                   Step {n}: {CURRICULUM[n.toString()].title}
@@ -113,12 +114,12 @@ export const TutorPortal: React.FC<TutorPortalProps> = ({
             Progress Overview
           </h2>
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white/5 p-4 rounded-xl text-center">
+            <div className="bg-tutor-card/60 p-4 rounded-xl text-center border border-primary/10">
               <div className="text-3xl font-black text-accent">{student.xp}</div>
               <div className="text-xs text-muted-foreground uppercase">Total XP</div>
             </div>
-            <div className="bg-white/5 p-4 rounded-xl text-center">
-              <div className="text-3xl font-black text-orange-400">{streak}</div>
+            <div className="bg-tutor-card/60 p-4 rounded-xl text-center border border-primary/10">
+              <div className="text-3xl font-black text-primary">{streak}</div>
               <div className="text-xs text-muted-foreground uppercase">Day Streak</div>
             </div>
           </div>
