@@ -136,7 +136,13 @@ export const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComple
     : 'from-violet-400 via-purple-500 to-indigo-500';
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${bgGradient} flex flex-col items-center justify-center p-4 sm:p-6 safe-area-inset`}>
+    <div 
+      className={`min-h-[100dvh] bg-gradient-to-br ${bgGradient} flex flex-col items-center justify-center p-4 sm:p-6`}
+      style={{ 
+        paddingTop: 'max(env(safe-area-inset-top), 16px)',
+        paddingBottom: 'max(env(safe-area-inset-bottom), 16px)',
+      }}
+    >
       {showConfetti && <Confetti />}
 
       {/* Floating decorative elements */}
