@@ -14,16 +14,442 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      achievements: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          requirement_type: string
+          requirement_value: number
+          xp_reward: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          requirement_type: string
+          requirement_value: number
+          xp_reward?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          requirement_type?: string
+          requirement_value?: number
+          xp_reward?: number | null
+        }
+        Relationships: []
+      }
+      challenge_results: {
+        Row: {
+          attempts: number | null
+          challenge_id: string | null
+          completion_id: string | null
+          correct: boolean
+          created_at: string | null
+          hints_used: number | null
+          id: string
+          time_seconds: number | null
+        }
+        Insert: {
+          attempts?: number | null
+          challenge_id?: string | null
+          completion_id?: string | null
+          correct: boolean
+          created_at?: string | null
+          hints_used?: number | null
+          id?: string
+          time_seconds?: number | null
+        }
+        Update: {
+          attempts?: number | null
+          challenge_id?: string | null
+          completion_id?: string | null
+          correct?: boolean
+          created_at?: string | null
+          hints_used?: number | null
+          id?: string
+          time_seconds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_results_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_results_completion_id_fkey"
+            columns: ["completion_id"]
+            isOneToOne: false
+            referencedRelation: "quest_completions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          challenge_order: number
+          challenge_type: string
+          content: Json
+          created_at: string | null
+          id: string
+          pass_threshold: number | null
+          quest_id: string | null
+        }
+        Insert: {
+          challenge_order: number
+          challenge_type: string
+          content: Json
+          created_at?: string | null
+          id?: string
+          pass_threshold?: number | null
+          quest_id?: string | null
+        }
+        Update: {
+          challenge_order?: number
+          challenge_type?: string
+          content?: Json
+          created_at?: string | null
+          id?: string
+          pass_threshold?: number | null
+          quest_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenges_quest_id_fkey"
+            columns: ["quest_id"]
+            isOneToOne: false
+            referencedRelation: "quests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_progress: {
+        Row: {
+          created_at: string | null
+          date: string
+          id: string
+          is_daily_champion: boolean | null
+          is_super_champion: boolean | null
+          quests_completed: number | null
+          student_id: string
+          total_time_minutes: number | null
+          total_xp_earned: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          is_daily_champion?: boolean | null
+          is_super_champion?: boolean | null
+          quests_completed?: number | null
+          student_id: string
+          total_time_minutes?: number | null
+          total_xp_earned?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          is_daily_champion?: boolean | null
+          is_super_champion?: boolean | null
+          quests_completed?: number | null
+          student_id?: string
+          total_time_minutes?: number | null
+          total_xp_earned?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_progress_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          email?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      quest_completions: {
+        Row: {
+          completed_at: string | null
+          hints_used: number | null
+          id: string
+          overall_accuracy: number
+          quest_id: string
+          star_rating: number | null
+          student_id: string
+          total_time_seconds: number
+          treasure_found: boolean | null
+          xp_earned: number
+        }
+        Insert: {
+          completed_at?: string | null
+          hints_used?: number | null
+          id?: string
+          overall_accuracy: number
+          quest_id: string
+          star_rating?: number | null
+          student_id: string
+          total_time_seconds: number
+          treasure_found?: boolean | null
+          xp_earned: number
+        }
+        Update: {
+          completed_at?: string | null
+          hints_used?: number | null
+          id?: string
+          overall_accuracy?: number
+          quest_id?: string
+          star_rating?: number | null
+          student_id?: string
+          total_time_seconds?: number
+          treasure_found?: boolean | null
+          xp_earned?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quest_completions_quest_id_fkey"
+            columns: ["quest_id"]
+            isOneToOne: false
+            referencedRelation: "quests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quest_completions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quests: {
+        Row: {
+          base_xp: number | null
+          created_at: string | null
+          description: string | null
+          difficulty: number
+          estimated_minutes: number
+          id: string
+          is_active: boolean | null
+          name: string
+          region: string
+          story_conclusion: string | null
+          story_intro: string | null
+          wilson_step: number
+        }
+        Insert: {
+          base_xp?: number | null
+          created_at?: string | null
+          description?: string | null
+          difficulty: number
+          estimated_minutes?: number
+          id?: string
+          is_active?: boolean | null
+          name: string
+          region: string
+          story_conclusion?: string | null
+          story_intro?: string | null
+          wilson_step: number
+        }
+        Update: {
+          base_xp?: number | null
+          created_at?: string | null
+          description?: string | null
+          difficulty?: number
+          estimated_minutes?: number
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          region?: string
+          story_conclusion?: string | null
+          story_intro?: string | null
+          wilson_step?: number
+        }
+        Relationships: []
+      }
+      student_achievements: {
+        Row: {
+          achievement_id: string
+          earned_at: string | null
+          id: string
+          student_id: string
+        }
+        Insert: {
+          achievement_id: string
+          earned_at?: string | null
+          id?: string
+          student_id: string
+        }
+        Update: {
+          achievement_id?: string
+          earned_at?: string | null
+          id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_achievements_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      students: {
+        Row: {
+          active_accessory: string | null
+          active_pet: string | null
+          active_theme: string | null
+          audio_speed: number | null
+          avatar_config: Json | null
+          avatar_emoji: string | null
+          background_preference: string | null
+          character_name: string
+          created_at: string | null
+          current_level: number | null
+          current_region: string | null
+          current_streak: number | null
+          current_wilson_step: number | null
+          font_preference: string | null
+          id: string
+          last_activity_date: string | null
+          longest_streak: number | null
+          owned_items: string[] | null
+          streak_freeze_tokens: number | null
+          total_xp: number | null
+          treasures_collected: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          active_accessory?: string | null
+          active_pet?: string | null
+          active_theme?: string | null
+          audio_speed?: number | null
+          avatar_config?: Json | null
+          avatar_emoji?: string | null
+          background_preference?: string | null
+          character_name?: string
+          created_at?: string | null
+          current_level?: number | null
+          current_region?: string | null
+          current_streak?: number | null
+          current_wilson_step?: number | null
+          font_preference?: string | null
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number | null
+          owned_items?: string[] | null
+          streak_freeze_tokens?: number | null
+          total_xp?: number | null
+          treasures_collected?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          active_accessory?: string | null
+          active_pet?: string | null
+          active_theme?: string | null
+          audio_speed?: number | null
+          avatar_config?: Json | null
+          avatar_emoji?: string | null
+          background_preference?: string | null
+          character_name?: string
+          created_at?: string | null
+          current_level?: number | null
+          current_region?: string | null
+          current_streak?: number | null
+          current_wilson_step?: number | null
+          font_preference?: string | null
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number | null
+          owned_items?: string[] | null
+          streak_freeze_tokens?: number | null
+          total_xp?: number | null
+          treasures_collected?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "parent" | "student"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +576,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "parent", "student"],
+    },
   },
 } as const
