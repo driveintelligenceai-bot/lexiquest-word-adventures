@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Flame, Trophy, Settings, Volume2, Map, User, Award, Users, VolumeX, Music } from 'lucide-react';
+import { Flame, Trophy, Settings, Volume2, Map, User, Award, Users, VolumeX, Music, ShoppingBag } from 'lucide-react';
 import { useStickyState } from '@/hooks/useStickyState';
 import { useVoiceSettings } from '@/hooks/useVoiceSettings';
 import { applyLexiaTheme } from '@/lib/lexiaTheme';
@@ -29,6 +29,7 @@ import { JumbleMonsterModal } from '@/components/game/JumbleMonsterModal';
 import { ParentDashboard } from '@/components/game/ParentDashboard';
 import { TrophyCollection, checkNewAchievements, ACHIEVEMENTS, AchievementStats } from '@/components/game/TrophyCollection';
 import { AchievementUnlockModal } from '@/components/game/AchievementUnlockModal';
+import { RewardStore } from '@/components/lexi/RewardStore';
 
 interface LexiaGameState {
   hasOnboarded: boolean;
@@ -108,6 +109,7 @@ const LexiaHome: React.FC = () => {
   const [showMonster, setShowMonster] = useState(false);
   const [monsterDefeated, setMonsterDefeated] = useState(false);
   const [newAchievement, setNewAchievement] = useState<any>(null);
+  const [showStore, setShowStore] = useState(false);
   const { speak, settings: voiceSettings } = useVoiceSettings();
   
   const currentRegion = STORY_REGIONS[state.progress.currentRegion] || STORY_REGIONS.phoneme_forest;
@@ -362,7 +364,21 @@ const LexiaHome: React.FC = () => {
     }
   };
 
-  // Enhanced Onboarding
+  const handleStorePurchase = (itemId: string, cost: number) => {
+    if (state.progress.xp < cost) return;
+    
+    setState(prev => ({
+      ...prev,
+      progress: {
+        ...prev.progress,
+        xp: prev.progress.xp - cost,
+      },
+      ownedItems: [...prev.ownedItems, itemId],
+    }));
+    
+    speak('Awesome purchase! Check out your new item!');
+  };
+
   if (!state.hasOnboarded) {
     return <EnhancedOnboarding onComplete={handleCharacterComplete} />;
   }
@@ -550,6 +566,16 @@ const LexiaHome: React.FC = () => {
   // Home View
   return (
     <div className="min-h-screen bg-background pb-32 safe-area-inset">
+      {/* Reward Store Modal */}
+      {showStore && (
+        <RewardStore
+          currentXp={state.progress.xp}
+          ownedItems={state.ownedItems}
+          onClose={() => setShowStore(false)}
+          onPurchase={handleStorePurchase}
+        />
+      )}
+
       {/* Achievement Unlock Modal */}
       <AchievementUnlockModal
         achievement={newAchievement}
@@ -781,6 +807,14 @@ const LexiaHome: React.FC = () => {
         >
           <Award size={22} />
           <span className="text-xs font-bold">Quests</span>
+        </button>
+        <button
+          onClick={() => { playEffect('tap'); setShowStore(true); }}
+          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${showStore ? 'text-primary' : 'text-muted-foreground'}`}
+          aria-label="Open reward store"
+        >
+          <ShoppingBag size={22} />
+          <span className="text-xs font-bold">Store</span>
         </button>
         <button
           onClick={() => { playEffect('tap'); setView('trophies'); }}
