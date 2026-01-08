@@ -33,6 +33,7 @@ import { RewardStore } from '@/components/lexi/RewardStore';
 import { SettingsPanel, SoundSettings, AccessibilitySettings as SettingsAccessibility } from '@/components/game/SettingsPanel';
 import { FocusModeView } from '@/components/game/FocusModeView';
 import { DailyLoginRewards, LoginRewardsState } from '@/components/game/DailyLoginRewards';
+import { PhonemeDrillGame } from '@/components/game/PhonemeDrillGame';
 
 interface LexiaGameState {
   hasOnboarded: boolean;
@@ -124,8 +125,8 @@ const DEFAULT_STATE: LexiaGameState = {
   },
 };
 
-type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'rhymeHunt' | 'memoryMatch' | 'syllableSort' | 'spelling' | 'vocabulary' | 'victory' | 'profile' | 'settings' | 'parent' | 'trophies';
-type QuestType = 'sound' | 'word' | 'rhyme' | 'memory' | 'syllable' | 'spelling' | 'vocabulary';
+type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'rhymeHunt' | 'memoryMatch' | 'syllableSort' | 'spelling' | 'vocabulary' | 'phonemeDrill' | 'victory' | 'profile' | 'settings' | 'parent' | 'trophies';
+type QuestType = 'sound' | 'word' | 'rhyme' | 'memory' | 'syllable' | 'spelling' | 'vocabulary' | 'phoneme';
 
 const LexiaHome: React.FC = () => {
   const [state, setState] = useStickyState<LexiaGameState>(DEFAULT_STATE, 'lexia_world_v4');
@@ -312,6 +313,7 @@ const LexiaHome: React.FC = () => {
       syllable: 'syllableSort',
       spelling: 'spelling',
       vocabulary: 'vocabulary',
+      phoneme: 'phonemeDrill',
     };
     
     setView(viewMap[questType]);
@@ -635,6 +637,16 @@ const LexiaHome: React.FC = () => {
     );
   }
 
+  if (view === 'phonemeDrill') {
+    return (
+      <PhonemeDrillGame
+        questionsCount={6}
+        onComplete={handleQuestComplete}
+        onBack={() => setView('home')}
+      />
+    );
+  }
+
   if (view === 'map') {
     return (
       <div className="min-h-screen bg-background p-4 pb-32 safe-area-inset">
@@ -905,6 +917,17 @@ const LexiaHome: React.FC = () => {
 
           {/* Quest Buttons Grid */}
           <div className="grid grid-cols-2 gap-3">
+            {/* Phoneme Drill - First activity for beginners */}
+            <button
+              onClick={() => handleStartQuest('phoneme')}
+              className="min-h-[80px] bg-gradient-to-br from-primary to-accent text-primary-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform col-span-2"
+              aria-label="Start Phoneme Drill"
+              role="button"
+            >
+              <span className="text-2xl" aria-hidden="true">🎯</span>
+              <span className="text-sm">Sound Practice</span>
+              <span className="text-[10px] opacity-80">Learn letter sounds first!</span>
+            </button>
             <button
               onClick={() => handleStartQuest('sound')}
               className="min-h-[80px] bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
@@ -1052,6 +1075,7 @@ function getQuestName(type: QuestType): string {
     syllable: 'Syllable Sort Mission',
     spelling: 'Spelling Challenge',
     vocabulary: 'Word Meanings Quiz',
+    phoneme: 'Phoneme Practice Drill',
   };
   return names[type];
 }
