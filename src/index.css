@@ -21,11 +21,11 @@
     --primary: 174 62% 57%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Warm */
+    /* Secondary */
     --secondary: 210 40% 96%;
     --secondary-foreground: 215 25% 23%;
 
-    /* Wilson Colors */
+    /* Wilson Sound Card Colors */
     --consonant: 201 94% 94%;
     --consonant-border: 197 88% 60%;
     --consonant-text: 201 90% 32%;
@@ -34,9 +34,17 @@
     --vowel-border: 347 77% 73%;
     --vowel-text: 347 77% 35%;
     
+    --digraph: 48 96% 89%;
+    --digraph-border: 43 96% 56%;
+    --digraph-text: 32 81% 29%;
+    
     --welded: 152 76% 91%;
     --welded-border: 160 64% 51%;
     --welded-text: 160 84% 29%;
+
+    --suffix: 27 96% 91%;
+    --suffix-border: 27 96% 61%;
+    --suffix-text: 21 90% 38%;
 
     /* Muted */
     --muted: 210 30% 95%;
@@ -56,9 +64,9 @@
 
     --radius: 1rem;
 
-    /* Shadows */
-    --shadow-button: 0 6px 0;
-    --shadow-card: 0 4px 20px -4px;
+    /* Tutor Portal */
+    --tutor-bg: 222 47% 11%;
+    --tutor-card: 222 47% 15%;
   }
 
   .dark {
@@ -66,21 +74,6 @@
     --foreground: 45 33% 97%;
     --card: 215 25% 18%;
     --card-foreground: 45 33% 97%;
-    --popover: 215 25% 18%;
-    --popover-foreground: 45 33% 97%;
-    --primary: 174 62% 57%;
-    --primary-foreground: 215 25% 15%;
-    --secondary: 215 25% 22%;
-    --secondary-foreground: 45 33% 97%;
-    --muted: 215 25% 22%;
-    --muted-foreground: 215 15% 65%;
-    --accent: 28 87% 62%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 215 25% 25%;
-    --input: 215 25% 25%;
-    --ring: 174 62% 57%;
   }
 }
 
@@ -103,32 +96,30 @@
 
 @layer components {
   /* Wilson Sound Cards */
-  .card-consonant {
+  .tile-consonant {
     @apply bg-consonant border-consonant-border text-consonant-text;
   }
   
-  .card-vowel {
+  .tile-vowel {
     @apply bg-vowel border-vowel-border text-vowel-text;
   }
   
-  .card-welded {
+  .tile-digraph {
+    @apply bg-digraph border-digraph-border text-digraph-text;
+  }
+  
+  .tile-welded {
     @apply bg-welded border-welded-border text-welded-text;
   }
 
-  /* Tactile Button Base */
-  .btn-tactile {
-    @apply relative transition-all duration-150 active:translate-y-[6px] active:shadow-none;
-    box-shadow: var(--shadow-button) hsl(var(--primary) / 0.5);
-  }
-
-  .btn-tactile:active {
-    box-shadow: none;
+  .tile-suffix {
+    @apply bg-suffix border-suffix-border text-suffix-text;
   }
 
   /* Quest Card */
   .quest-card {
-    @apply w-full p-5 rounded-3xl flex items-center justify-between border-b-[6px] transition-all;
-    @apply active:scale-[0.98] active:border-b-0 active:translate-y-[6px];
+    @apply w-full p-4 rounded-2xl flex items-center justify-between border-b-[5px] transition-all;
+    @apply active:scale-[0.98] active:border-b-0 active:translate-y-[5px];
   }
 
   .quest-card-active {
@@ -139,33 +130,64 @@
     @apply bg-muted border-transparent opacity-50 grayscale cursor-default;
   }
 
-  /* Audio Button */
-  .audio-btn {
-    @apply p-2 bg-blue-50 text-consonant-text rounded-full hover:bg-blue-100 active:scale-95 transition-transform;
+  /* Tactile Button */
+  .btn-tactile {
+    @apply relative transition-all duration-150;
+    @apply active:translate-y-[6px];
   }
 
   /* Letter Tile */
   .letter-tile {
-    @apply w-20 h-20 text-4xl font-black rounded-2xl border-b-8 flex items-center justify-center;
-    @apply active:border-b-0 active:translate-y-2 transition-all cursor-pointer;
+    @apply text-3xl font-black rounded-2xl border-b-[6px] flex items-center justify-center;
+    @apply active:border-b-0 active:translate-y-[6px] transition-all cursor-pointer shadow-sm;
   }
 
-  /* Progress Bar */
-  .progress-bar {
-    @apply h-4 bg-foreground/10 rounded-full overflow-hidden;
-  }
-
-  .progress-fill {
-    @apply h-full bg-primary transition-all duration-1000 ease-out;
+  /* Tutor Portal Styles */
+  .tutor-card {
+    @apply bg-white/5 border border-white/10 rounded-3xl;
   }
 }
 
 @layer utilities {
-  .text-shadow-sm {
-    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-  }
-
   .pb-safe {
     padding-bottom: max(2rem, env(safe-area-inset-bottom));
   }
+
+  .animate-bounce-slow {
+    animation: bounce-slow 2s ease-in-out infinite;
+  }
+
+  .animate-spin-slow {
+    animation: spin 3s linear infinite;
+  }
+
+  .animate-shake {
+    animation: shake 0.5s ease-in-out;
+  }
+}
+
+@keyframes bounce-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+@keyframes float-up {
+  0% { 
+    transform: translateY(0) rotate(0deg); 
+    opacity: 1; 
+  }
+  100% { 
+    transform: translateY(-100vh) rotate(720deg); 
+    opacity: 0; 
+  }
+}
+
+.animate-float-up {
+  animation: float-up 2s ease-out forwards;
 }

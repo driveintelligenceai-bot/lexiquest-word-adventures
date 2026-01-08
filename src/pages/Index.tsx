@@ -1,150 +1,141 @@
 import React, { useState } from 'react';
-import { 
-  Headphones, Settings, School, CheckCircle, 
-  Star, BookOpen 
-} from 'lucide-react';
+import { Headphones, LayoutGrid, School, Zap, BookOpen, Heart } from 'lucide-react';
 import { useStickyState } from '@/hooks/useStickyState';
-import { Dashboard } from '@/components/Dashboard';
-import { QuestView } from '@/components/QuestView';
-import { RewardModal } from '@/components/RewardModal';
-import { Quest } from '@/components/QuestCard';
-
-// Wilson Step 1.1 Quest Configuration (3+3)
-const QUESTS: Quest[] = [
-  // Tutor Quests (Morning)
-  { 
-    id: 't1', 
-    role: 'tutor', 
-    type: 'drill', 
-    title: 'Sound Drill', 
-    icon: Headphones, 
-    points: 1, 
-    content: 'Listen and tap each sound' 
-  },
-  { 
-    id: 't2', 
-    role: 'tutor', 
-    type: 'build', 
-    title: 'Word Builder', 
-    icon: Settings, 
-    points: 1, 
-    content: 'Build the word MAP',
-    target: 'map' 
-  },
-  { 
-    id: 't3', 
-    role: 'tutor', 
-    type: 'check', 
-    title: 'Tutor Check', 
-    icon: School, 
-    points: 3, 
-    content: 'Show your tutor what you learned' 
-  },
-  
-  // Home Quests (Evening)
-  { 
-    id: 'h1', 
-    role: 'home', 
-    type: 'drill', 
-    title: 'Finger Tapping', 
-    icon: CheckCircle, 
-    points: 1, 
-    content: 'Tap each sound with your fingers' 
-  },
-  { 
-    id: 'h2', 
-    role: 'home', 
-    type: 'build', 
-    title: 'Spelling Bee', 
-    icon: Star, 
-    points: 1, 
-    content: 'Spell the word CAT',
-    target: 'cat' 
-  },
-  { 
-    id: 'h3', 
-    role: 'home', 
-    type: 'check', 
-    title: 'Story Time', 
-    icon: BookOpen, 
-    points: 3, 
-    content: 'Read a story with your parent' 
-  },
-];
+import { CURRICULUM } from '@/lib/curriculum';
+import { StudentDashboard } from '@/components/lexi/StudentDashboard';
+import { TutorPortal } from '@/components/lexi/TutorPortal';
+import { QuestActivity } from '@/components/lexi/QuestActivity';
+import { ParentGate } from '@/components/lexi/ParentGate';
+import { RewardModal } from '@/components/lexi/RewardModal';
+import { Confetti } from '@/components/lexi/Confetti';
+import { Quest } from '@/components/lexi/QuestCard';
 
 interface GameState {
   student: {
     name: string;
     step: string;
+    level: number;
+    xp: number;
   };
   streak: number;
-  points: number;
-  dailyQuests: Record<string, boolean>;
+  dailyProgress: Record<string, boolean>;
 }
 
 const DEFAULT_STATE: GameState = {
-  student: { name: 'Explorer', step: '1.1' },
-  streak: 4,
-  points: 0,
-  dailyQuests: { t1: false, t2: false, t3: false, h1: false, h2: false, h3: false },
+  student: { name: 'Explorer', step: '1.1', level: 1, xp: 0 },
+  streak: 5,
+  dailyProgress: { t1: false, t2: false, t3: false, h1: false, h2: false, h3: false }
 };
 
 const Index = () => {
-  const [state, setState] = useStickyState<GameState>(DEFAULT_STATE, 'lexiquest_v1');
-  const [view, setView] = useState<'dashboard' | 'quest'>('dashboard');
+  const [state, setState] = useStickyState<GameState>(DEFAULT_STATE, 'lexiquest_v1_prod');
+  const [view, setView] = useState<'student' | 'tutor' | 'quest'>('student');
   const [activeQuest, setActiveQuest] = useState<Quest | null>(null);
+  const [showGate, setShowGate] = useState(false);
   const [reward, setReward] = useState<{ points: number; isBoss: boolean } | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  // Get current step data
+  const stepData = CURRICULUM["1"].substeps[state.student.step] || CURRICULUM["1"].substeps["1.1"];
+
+  // Define 3+3 Quests
+  const QUESTS: Quest[] = [
+    // Morning (Tutor)
+    { id: 't1', role: 'tutor', type: 'drill', title: 'Sound Drill', icon: Headphones, points: 5, content: 'Review Sound Cards', data: stepData.tiles },
+    { id: 't2', role: 'tutor', type: 'build', title: 'Word Builder', icon: LayoutGrid, points: 10, content: 'Build 3 Words', data: stepData },
+    { id: 't3', role: 'tutor', type: 'check', title: 'Tutor Check', icon: School, points: 15, content: 'Lesson Complete', data: null },
+    // Evening (Home)
+    { id: 'h1', role: 'home', type: 'read', title: 'Tap & Read', icon: Zap, points: 5, content: `Read: ${stepData.words[0]}`, data: stepData.words[0] },
+    { id: 'h2', role: 'home', type: 'read', title: 'Fluency', icon: BookOpen, points: 10, content: stepData.sentences[0], data: stepData.sentences[0] },
+    { id: 'h3', role: 'home', type: 'check', title: 'High Five', icon: Heart, points: 15, content: 'Sign off with Parent', data: null }
+  ];
 
   const handleQuestSelect = (quest: Quest) => {
-    if (state.dailyQuests[quest.id]) return;
+    if (state.dailyProgress[quest.id]) return;
     setActiveQuest(quest);
     setView('quest');
   };
 
   const handleQuestComplete = (quest: Quest) => {
-    if (state.dailyQuests[quest.id]) return;
+    if (state.dailyProgress[quest.id]) return;
 
-    const newQuests = { ...state.dailyQuests, [quest.id]: true };
-    const allComplete = Object.values(newQuests).every(Boolean);
-    const newPoints = state.points + quest.points;
-    
+    const newProgress = { ...state.dailyProgress, [quest.id]: true };
+    const allComplete = Object.values(newProgress).every(Boolean);
+    const newXp = state.student.xp + quest.points;
+    const newLevel = Math.floor(newXp / 50) + 1;
+
     setState(prev => ({
       ...prev,
-      dailyQuests: newQuests,
-      points: newPoints,
-      streak: allComplete ? prev.streak + 1 : prev.streak,
+      student: { ...prev.student, xp: newXp, level: newLevel },
+      dailyProgress: newProgress,
+      streak: allComplete ? prev.streak + 1 : prev.streak
     }));
 
-    setView('dashboard');
+    setView('student');
+    setShowConfetti(true);
     
-    // Show reward after a brief delay
     setTimeout(() => {
-      setReward({ 
-        points: quest.points, 
-        isBoss: allComplete || newPoints >= 10 
-      });
-    }, 300);
+      setReward({ points: quest.points, isBoss: allComplete });
+      setShowConfetti(false);
+    }, 500);
   };
+
+  const handleSettingsClick = () => {
+    setShowGate(true);
+  };
+
+  const handleStepChange = (stepId: string) => {
+    setState(prev => ({
+      ...prev,
+      student: { ...prev.student, step: stepId }
+    }));
+  };
+
+  // Render Views
+  if (view === 'tutor') {
+    return (
+      <TutorPortal
+        student={state.student}
+        streak={state.streak}
+        onClose={() => setView('student')}
+        onStepChange={handleStepChange}
+      />
+    );
+  }
+
+  if (view === 'quest' && activeQuest) {
+    return (
+      <QuestActivity
+        quest={activeQuest}
+        stepData={stepData}
+        onComplete={() => handleQuestComplete(activeQuest)}
+        onBack={() => setView('student')}
+      />
+    );
+  }
 
   return (
     <>
-      {view === 'dashboard' ? (
-        <Dashboard
-          studentName={state.student.name}
-          step={state.student.step}
-          streak={state.streak}
-          points={state.points}
-          dailyQuests={state.dailyQuests}
-          quests={QUESTS}
-          onQuestSelect={handleQuestSelect}
+      <StudentDashboard
+        student={state.student}
+        streak={state.streak}
+        dailyProgress={state.dailyProgress}
+        quests={QUESTS}
+        onQuestSelect={handleQuestSelect}
+        onSettingsClick={handleSettingsClick}
+      />
+
+      {/* Parent Gate for Tutor Access */}
+      {showGate && (
+        <ParentGate
+          title="Tutor Access"
+          onClose={() => setShowGate(false)}
+          onSuccess={() => {
+            setShowGate(false);
+            setView('tutor');
+          }}
         />
-      ) : activeQuest ? (
-        <QuestView
-          quest={activeQuest}
-          onComplete={() => handleQuestComplete(activeQuest)}
-          onBack={() => setView('dashboard')}
-        />
-      ) : null}
+      )}
 
       {/* Reward Modal */}
       {reward && (
@@ -154,6 +145,9 @@ const Index = () => {
           onClose={() => setReward(null)}
         />
       )}
+
+      {/* Confetti Effect */}
+      {showConfetti && <Confetti />}
     </>
   );
 };
