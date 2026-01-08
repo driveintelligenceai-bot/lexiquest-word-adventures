@@ -30,6 +30,7 @@ import { ParentDashboard } from '@/components/game/ParentDashboard';
 import { TrophyCollection, checkNewAchievements, ACHIEVEMENTS, AchievementStats } from '@/components/game/TrophyCollection';
 import { AchievementUnlockModal } from '@/components/game/AchievementUnlockModal';
 import { RewardStore } from '@/components/lexi/RewardStore';
+import { SettingsPanel, SoundSettings, AccessibilitySettings as SettingsAccessibility } from '@/components/game/SettingsPanel';
 
 interface LexiaGameState {
   hasOnboarded: boolean;
@@ -54,8 +55,16 @@ interface LexiaGameState {
     audioSpeed: number;
     dyslexiaFont: boolean;
     dailyTimeLimit: number;
+    // Sound settings
+    masterVolume: boolean;
     voiceEnabled: boolean;
     soundEffectsEnabled: boolean;
+    musicEnabled: boolean;
+    // Accessibility
+    fontSize: 'small' | 'medium' | 'large';
+    reduceMotion: boolean;
+    highContrast: boolean;
+    speechRate: number;
   };
   ownedItems: string[];
   completedQuests: string[];
@@ -84,8 +93,16 @@ const DEFAULT_STATE: LexiaGameState = {
     audioSpeed: 0.9,
     dyslexiaFont: true,
     dailyTimeLimit: 30,
+    // Sound settings
+    masterVolume: true,
     voiceEnabled: true,
     soundEffectsEnabled: true,
+    musicEnabled: false,
+    // Accessibility
+    fontSize: 'medium',
+    reduceMotion: false,
+    highContrast: false,
+    speechRate: 0.85,
   },
   ownedItems: [],
   completedQuests: [],
@@ -110,7 +127,8 @@ const LexiaHome: React.FC = () => {
   const [monsterDefeated, setMonsterDefeated] = useState(false);
   const [newAchievement, setNewAchievement] = useState<any>(null);
   const [showStore, setShowStore] = useState(false);
-  const { speak, settings: voiceSettings } = useVoiceSettings();
+  const [showSettings, setShowSettings] = useState(false);
+  const { speak, settings: voiceSettings, updateSettings: updateVoiceSettings } = useVoiceSettings();
   
   const currentRegion = STORY_REGIONS[state.progress.currentRegion] || STORY_REGIONS.phoneme_forest;
   const dailyQuests = generateDailyQuests(
@@ -121,8 +139,8 @@ const LexiaHome: React.FC = () => {
   const streakBonus = getStreakXpBonus(state.progress.streak);
 
   const playEffect = (effect: string) => {
-    // Play sound effect
-    if (state.settings.soundEffectsEnabled !== false) {
+    // Play sound effect only if master and effects enabled
+    if (state.settings.masterVolume && state.settings.soundEffectsEnabled) {
       switch (effect) {
         case 'tap': sounds.tap(); break;
         case 'success': sounds.success(); break;
@@ -140,10 +158,31 @@ const LexiaHome: React.FC = () => {
     }
   };
 
-  // Sync sound settings
+  // Helper to speak only when voice is enabled
+  const speakIfEnabled = (text: string) => {
+    if (state.settings.masterVolume && state.settings.voiceEnabled) {
+      speak(text);
+    }
+  };
+
+  // Sync sound settings on mount and when changed
   useEffect(() => {
-    sounds.setEnabled(state.settings.soundEffectsEnabled !== false);
-  }, [state.settings.soundEffectsEnabled]);
+    const effectsEnabled = state.settings.masterVolume && state.settings.soundEffectsEnabled;
+    sounds.setEnabled(effectsEnabled);
+    
+    // Sync music
+    if (state.settings.masterVolume && state.settings.musicEnabled) {
+      backgroundMusic.start();
+    } else {
+      backgroundMusic.stop();
+    }
+    
+    // Sync voice settings
+    updateVoiceSettings({ 
+      enabled: state.settings.masterVolume && state.settings.voiceEnabled,
+      rate: state.settings.speechRate,
+    });
+  }, [state.settings.masterVolume, state.settings.soundEffectsEnabled, state.settings.musicEnabled, state.settings.voiceEnabled, state.settings.speechRate]);
 
   // Apply theme on mount
   useEffect(() => {
@@ -227,7 +266,7 @@ const LexiaHome: React.FC = () => {
       const greeting = state.progress.streak > 0 
         ? `Welcome back, ${state.character.name}! You have a ${state.progress.streak} day streak!`
         : `Welcome back, ${state.character.name}! Ready for an adventure?`;
-      speak(greeting);
+      speakIfEnabled(greeting);
     }
   }, [state.hasOnboarded]);
 
@@ -360,7 +399,7 @@ const LexiaHome: React.FC = () => {
         },
       }));
       playEffect('correct');
-      speak('Streak freeze activated! Your streak is protected!');
+      speakIfEnabled('Streak freeze activated! Your streak is protected!');
     }
   };
 
@@ -376,7 +415,22 @@ const LexiaHome: React.FC = () => {
       ownedItems: [...prev.ownedItems, itemId],
     }));
     
-    speak('Awesome purchase! Check out your new item!');
+    speakIfEnabled('Awesome purchase! Check out your new item!');
+  };
+
+  // Settings panel handlers
+  const handleSoundSettingsChange = (updates: Partial<SoundSettings>) => {
+    setState(prev => ({
+      ...prev,
+      settings: { ...prev.settings, ...updates },
+    }));
+  };
+
+  const handleAccessibilitySettingsChange = (updates: Partial<SettingsAccessibility>) => {
+    setState(prev => ({
+      ...prev,
+      settings: { ...prev.settings, ...updates },
+    }));
   };
 
   if (!state.hasOnboarded) {
@@ -557,7 +611,7 @@ const LexiaHome: React.FC = () => {
               progress: { ...prev.progress, currentRegion: region }
             }));
           }}
-          onSpeak={speak}
+          onSpeak={speakIfEnabled}
         />
       </div>
     );
@@ -566,6 +620,29 @@ const LexiaHome: React.FC = () => {
   // Home View
   return (
     <div className="min-h-screen bg-background pb-32 safe-area-inset">
+      {/* Settings Panel */}
+      {showSettings && (
+        <SettingsPanel
+          soundSettings={{
+            masterVolume: state.settings.masterVolume,
+            voiceEnabled: state.settings.voiceEnabled,
+            soundEffectsEnabled: state.settings.soundEffectsEnabled,
+            musicEnabled: state.settings.musicEnabled,
+          }}
+          accessibilitySettings={{
+            fontSize: state.settings.fontSize,
+            dyslexiaFont: state.settings.dyslexiaFont,
+            reduceMotion: state.settings.reduceMotion,
+            highContrast: state.settings.highContrast,
+            speechRate: state.settings.speechRate,
+          }}
+          onSoundChange={handleSoundSettingsChange}
+          onAccessibilityChange={handleAccessibilitySettingsChange}
+          onClose={() => setShowSettings(false)}
+          onTestVoice={() => speak("Hello! I'm your reading friend. Let's learn together!")}
+        />
+      )}
+
       {/* Reward Store Modal */}
       {showStore && (
         <RewardStore
@@ -590,7 +667,7 @@ const LexiaHome: React.FC = () => {
             setFoundTreasure(null);
             playEffect('treasure');
           }}
-          onSpeak={speak}
+          onSpeak={speakIfEnabled}
         />
       )}
 
@@ -600,7 +677,7 @@ const LexiaHome: React.FC = () => {
           encounter={getJumbleMonster(state.progress.level)}
           isDefeated={monsterDefeated}
           onClose={() => setShowMonster(false)}
-          onSpeak={speak}
+          onSpeak={speakIfEnabled}
         />
       )}
 
@@ -637,29 +714,36 @@ const LexiaHome: React.FC = () => {
           </div>
 
           <div className="flex gap-2">
+            {/* Master Sound Toggle - Quick Access */}
             <button
               onClick={() => {
-                const newState = backgroundMusic.toggle();
                 playEffect('tap');
+                handleSoundSettingsChange({ masterVolume: !state.settings.masterVolume });
               }}
-              className={`h-12 w-12 rounded-xl flex items-center justify-center active:scale-95 transition-transform ${backgroundMusic.isCurrentlyPlaying() ? 'bg-primary/20' : 'bg-muted'}`}
-              aria-label={backgroundMusic.isCurrentlyPlaying() ? "Turn music off" : "Turn music on"}
+              className={`h-12 w-12 rounded-xl flex items-center justify-center active:scale-95 transition-transform ${state.settings.masterVolume ? 'bg-primary/20' : 'bg-destructive/20'}`}
+              aria-label={state.settings.masterVolume ? "Mute all sounds" : "Unmute sounds"}
             >
-              <Music size={20} className={backgroundMusic.isCurrentlyPlaying() ? 'text-primary' : ''} />
+              {state.settings.masterVolume ? (
+                <Volume2 size={20} className="text-primary" />
+              ) : (
+                <VolumeX size={20} className="text-destructive" />
+              )}
             </button>
+            {/* Settings Button */}
+            <button
+              onClick={() => { playEffect('tap'); setShowSettings(true); }}
+              className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center active:scale-95 transition-transform"
+              aria-label="Open settings"
+            >
+              <Settings size={20} />
+            </button>
+            {/* Parent Dashboard */}
             <button
               onClick={() => setView('parent')}
               className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center active:scale-95 transition-transform"
               aria-label="Parent dashboard"
             >
               <Users size={20} />
-            </button>
-            <button
-              onClick={() => speak(`Hello ${state.character.name}!`)}
-              className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center active:scale-95 transition-transform"
-              aria-label="Speak greeting"
-            >
-              <Volume2 size={20} />
             </button>
           </div>
         </div>
@@ -793,7 +877,7 @@ const LexiaHome: React.FC = () => {
             ? `Keep your ${state.progress.streak} day streak going!` 
             : "Choose a quest to start your adventure!"
           }
-          onSpeak={speak}
+          onSpeak={speakIfEnabled}
           position="bottom-left"
         />
       </main>
