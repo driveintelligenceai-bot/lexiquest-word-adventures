@@ -387,9 +387,11 @@ export const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComple
                   value={data.name}
                   onChange={(e) => setData({ ...data, name: e.target.value })}
                   placeholder="Type your name..."
-                  className="w-full h-16 text-xl text-center font-bold bg-muted border-4 border-border rounded-2xl focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/20 transition-all text-foreground placeholder:text-muted-foreground text-base"
+                  className="w-full h-16 text-xl text-center font-bold bg-muted border-4 border-border rounded-2xl focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/20 transition-all text-foreground placeholder:text-muted-foreground"
+                  style={{ fontSize: '16px' }}
                   autoFocus
                   maxLength={20}
+                  aria-label="Enter your name"
                 />
                 {data.name.length >= 2 && (
                   <motion.div

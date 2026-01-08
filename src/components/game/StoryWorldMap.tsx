@@ -159,9 +159,10 @@ export const StoryWorldMap: React.FC<StoryWorldMapProps> = ({
                         e.stopPropagation();
                         onSpeak(`${region.name}. ${region.description}`);
                       }}
-                      className="h-8 w-8 bg-muted rounded-full flex items-center justify-center active:scale-95"
+                      className="h-10 w-10 min-h-[44px] min-w-[44px] bg-muted rounded-full flex items-center justify-center active:scale-95"
+                      aria-label={`Hear about ${region.name}`}
                     >
-                      <Volume2 size={14} />
+                      <Volume2 size={16} />
                     </button>
                   )}
                 </div>
