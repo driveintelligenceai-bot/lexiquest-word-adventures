@@ -11,9 +11,11 @@ import { RewardModal } from '@/components/lexi/RewardModal';
 import { RewardStore } from '@/components/lexi/RewardStore';
 import { Confetti } from '@/components/lexi/Confetti';
 import { AccessibilityPanel, defaultAccessibilitySettings, AccessibilitySettings } from '@/components/lexi/AccessibilityPanel';
+import { AchievementBadges, AchievementStats } from '@/components/lexi/AchievementBadges';
 import { Quest } from '@/components/lexi/QuestCard';
 import { getDateKey, isNewDay } from '@/lib/dayUtils';
 import { sounds } from '@/lib/sounds';
+import { applyTheme, getActiveTheme } from '@/lib/themes';
 
 interface GameState {
   hasOnboarded: boolean;
@@ -31,6 +33,9 @@ interface GameState {
   xpHistory: Record<string, number>;
   ownedItems: string[];
   activePet?: string;
+  activeAccessory?: string;
+  activeTheme?: string;
+  totalQuestsCompleted: number;
 }
 
 const DEFAULT_STATE: GameState = {
@@ -42,6 +47,9 @@ const DEFAULT_STATE: GameState = {
   xpHistory: {},
   ownedItems: [],
   activePet: undefined,
+  activeAccessory: undefined,
+  activeTheme: 'default',
+  totalQuestsCompleted: 0,
 };
 
 const DEFAULT_PROGRESS = { t1: false, t2: false, t3: false, h1: false, h2: false, h3: false };
@@ -59,8 +67,15 @@ const Index = () => {
   const [showGate, setShowGate] = useState(false);
   const [showAccessibility, setShowAccessibility] = useState(false);
   const [showStore, setShowStore] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
   const [reward, setReward] = useState<{ points: number; isBoss: boolean } | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+
+  // Apply theme on mount and when it changes
+  useEffect(() => {
+    const theme = state.activeTheme || getActiveTheme(state.ownedItems);
+    applyTheme(theme);
+  }, [state.activeTheme, state.ownedItems]);
 
   // Daily reset check on mount
   useEffect(() => {
@@ -157,6 +172,7 @@ const Index = () => {
       dailyProgress: newProgress,
       streak: allComplete ? prev.streak + 1 : prev.streak,
       xpHistory: newXpHistory,
+      totalQuestsCompleted: prev.totalQuestsCompleted + 1,
     }));
 
     setView('student');
@@ -179,15 +195,34 @@ const Index = () => {
   };
 
   const handlePurchase = (itemId: string, cost: number) => {
-    setState(prev => ({
-      ...prev,
-      student: { ...prev.student, xp: prev.student.xp - cost },
-      ownedItems: [...prev.ownedItems, itemId],
-      // Auto-equip pet if purchased
-      activePet: itemId.startsWith('pet_') ? itemId : prev.activePet,
-    }));
+    setState(prev => {
+      const newOwnedItems = [...prev.ownedItems, itemId];
+      return {
+        ...prev,
+        student: { ...prev.student, xp: prev.student.xp - cost },
+        ownedItems: newOwnedItems,
+        // Auto-equip based on type
+        activePet: itemId.startsWith('pet_') ? itemId : prev.activePet,
+        activeAccessory: !itemId.startsWith('pet_') && !itemId.startsWith('theme_') ? itemId : prev.activeAccessory,
+        activeTheme: itemId.startsWith('theme_') ? itemId : prev.activeTheme,
+      };
+    });
   };
 
+  const handleAchievementsClick = () => {
+    sounds.tap();
+    setShowAchievements(true);
+  };
+
+  // Calculate achievement stats
+  const achievementStats: AchievementStats = {
+    totalXp: state.student.xp + state.ownedItems.reduce((sum) => sum, 0), // Include spent XP
+    questsCompleted: state.totalQuestsCompleted,
+    streak: state.streak,
+    level: state.student.level,
+    daysActive: Object.keys(state.xpHistory).length,
+    ownedItems: state.ownedItems.length,
+  };
 
   const handleStepChange = (stepId: string) => {
     setState(prev => ({
@@ -248,10 +283,13 @@ const Index = () => {
         dailyProgress={state.dailyProgress}
         quests={QUESTS}
         activePet={state.activePet}
+        ownedAccessories={state.ownedItems.filter(id => !id.startsWith('pet_') && !id.startsWith('theme_'))}
+        activeAccessory={state.activeAccessory}
         onQuestSelect={handleQuestSelect}
         onSettingsClick={handleSettingsClick}
         onAccessibilityClick={() => { sounds.tap(); setShowAccessibility(true); }}
         onStoreClick={handleStoreClick}
+        onAchievementsClick={handleAchievementsClick}
       />
 
       {/* Parent Gate for Tutor Access */}
@@ -282,6 +320,14 @@ const Index = () => {
           ownedItems={state.ownedItems}
           onClose={() => setShowStore(false)}
           onPurchase={handlePurchase}
+        />
+      )}
+
+      {/* Achievement Badges */}
+      {showAchievements && (
+        <AchievementBadges
+          stats={achievementStats}
+          onClose={() => setShowAchievements(false)}
         />
       )}
 

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Flame, Trophy, Settings, School, Home, Volume2, Eye, ShoppingBag } from 'lucide-react';
+import { Flame, Settings, School, Home, Volume2, Eye, ShoppingBag, Award } from 'lucide-react';
 import { QuestCard, Quest } from './QuestCard';
+import { AvatarWithAccessories } from './AvatarWithAccessories';
 import { speak } from '@/lib/speech';
 import { sounds } from '@/lib/sounds';
 
@@ -19,10 +20,13 @@ interface StudentDashboardProps {
   dailyProgress: Record<string, boolean>;
   quests: Quest[];
   activePet?: string;
+  ownedAccessories?: string[];
+  activeAccessory?: string;
   onQuestSelect: (quest: Quest) => void;
   onSettingsClick: () => void;
   onAccessibilityClick: () => void;
   onStoreClick: () => void;
+  onAchievementsClick: () => void;
 }
 
 export const StudentDashboard: React.FC<StudentDashboardProps> = ({
@@ -31,10 +35,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   dailyProgress,
   quests,
   activePet,
+  ownedAccessories = [],
+  activeAccessory,
   onQuestSelect,
   onSettingsClick,
   onAccessibilityClick,
   onStoreClick,
+  onAchievementsClick,
 }) => {
   const tutorQuests = quests.filter(q => q.role === 'tutor');
   const homeQuests = quests.filter(q => q.role === 'home');
@@ -51,9 +58,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       <header className="bg-card p-6 rounded-b-[40px] shadow-sm border-b-4 border-border sticky top-0 z-40">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center text-4xl shadow-sm border-2 border-accent/20 animate-bounce-slow">
-              {student.avatar || '🦊'}
-            </div>
+            <AvatarWithAccessories
+              baseAvatar={student.avatar || '🦊'}
+              ownedAccessories={ownedAccessories}
+              activeAccessory={activeAccessory}
+              size="md"
+            />
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-black text-foreground">{student.name}</h1>
@@ -72,6 +82,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </div>
 
           <div className="flex gap-2">
+            <button
+              onClick={onAchievementsClick}
+              className="h-12 w-12 inline-flex items-center justify-center rounded-xl bg-accent/10 text-accent hover:bg-accent/20 transition-colors active:scale-95"
+              aria-label="View achievements"
+            >
+              <Award size={20} />
+            </button>
             <button
               onClick={onAccessibilityClick}
               className="h-12 w-12 inline-flex items-center justify-center rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition-colors active:scale-95"
