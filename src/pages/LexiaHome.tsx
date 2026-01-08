@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Flame, Trophy, Settings, Volume2, Map, User, Award, Users } from 'lucide-react';
+import { Flame, Trophy, Settings, Volume2, Map, User, Award, Users, VolumeX } from 'lucide-react';
 import { useStickyState } from '@/hooks/useStickyState';
 import { useVoiceSettings } from '@/hooks/useVoiceSettings';
 import { applyLexiaTheme } from '@/lib/lexiaTheme';
 import { calculateStreak, getTodayStr, getStreakMilestoneMessage, getStreakXpBonus } from '@/lib/streakUtils';
 import { STORY_REGIONS, getRandomTreasure, TreasureReward, getJumbleMonster } from '@/lib/storyData';
+import { sounds } from '@/lib/sounds';
 
 // Game components
 import { SoundMatchGame } from '@/components/game/SoundMatchGame';
@@ -23,6 +24,8 @@ import { StoryWorldMap } from '@/components/game/StoryWorldMap';
 import { TreasureFoundModal } from '@/components/game/TreasureFoundModal';
 import { JumbleMonsterModal } from '@/components/game/JumbleMonsterModal';
 import { ParentDashboard } from '@/components/game/ParentDashboard';
+import { TrophyCollection, checkNewAchievements, ACHIEVEMENTS, AchievementStats } from '@/components/game/TrophyCollection';
+import { AchievementUnlockModal } from '@/components/game/AchievementUnlockModal';
 
 interface LexiaGameState {
   hasOnboarded: boolean;
@@ -40,6 +43,7 @@ interface LexiaGameState {
     streak: number;
     lastActiveDate: string;
     longestStreak: number;
+    treasuresFound: number;
   };
   settings: {
     theme: string;
@@ -47,6 +51,7 @@ interface LexiaGameState {
     dyslexiaFont: boolean;
     dailyTimeLimit: number;
     voiceEnabled: boolean;
+    soundEffectsEnabled: boolean;
   };
   ownedItems: string[];
   completedQuests: string[];
@@ -54,6 +59,7 @@ interface LexiaGameState {
   streakFreezeTokens: number;
   xpHistory: Record<string, number>;
   sessionHistory: Record<string, number>;
+  unlockedAchievements: string[];
 }
 
 const DEFAULT_STATE: LexiaGameState = {
@@ -67,6 +73,7 @@ const DEFAULT_STATE: LexiaGameState = {
     streak: 0,
     lastActiveDate: '',
     longestStreak: 0,
+    treasuresFound: 0,
   },
   settings: {
     theme: 'default',
@@ -74,6 +81,7 @@ const DEFAULT_STATE: LexiaGameState = {
     dyslexiaFont: true,
     dailyTimeLimit: 30,
     voiceEnabled: true,
+    soundEffectsEnabled: true,
   },
   ownedItems: [],
   completedQuests: [],
@@ -81,13 +89,14 @@ const DEFAULT_STATE: LexiaGameState = {
   streakFreezeTokens: 1,
   xpHistory: {},
   sessionHistory: {},
+  unlockedAchievements: [],
 };
 
-type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'rhymeHunt' | 'memoryMatch' | 'syllableSort' | 'victory' | 'profile' | 'settings' | 'parent';
+type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'rhymeHunt' | 'memoryMatch' | 'syllableSort' | 'victory' | 'profile' | 'settings' | 'parent' | 'trophies';
 type QuestType = 'sound' | 'word' | 'rhyme' | 'memory' | 'syllable';
 
 const LexiaHome: React.FC = () => {
-  const [state, setState] = useStickyState<LexiaGameState>(DEFAULT_STATE, 'lexia_world_v3');
+  const [state, setState] = useStickyState<LexiaGameState>(DEFAULT_STATE, 'lexia_world_v4');
   const [view, setView] = useState<GameView>('home');
   const [questResults, setQuestResults] = useState<any>(null);
   const [currentQuestType, setCurrentQuestType] = useState<QuestType>('sound');
@@ -95,6 +104,7 @@ const LexiaHome: React.FC = () => {
   const [foundTreasure, setFoundTreasure] = useState<TreasureReward | null>(null);
   const [showMonster, setShowMonster] = useState(false);
   const [monsterDefeated, setMonsterDefeated] = useState(false);
+  const [newAchievement, setNewAchievement] = useState<any>(null);
   const { speak, settings: voiceSettings } = useVoiceSettings();
   
   const currentRegion = STORY_REGIONS[state.progress.currentRegion] || STORY_REGIONS.phoneme_forest;
@@ -106,16 +116,68 @@ const LexiaHome: React.FC = () => {
   const streakBonus = getStreakXpBonus(state.progress.streak);
 
   const playEffect = (effect: string) => {
+    // Play sound effect
+    if (state.settings.soundEffectsEnabled !== false) {
+      switch (effect) {
+        case 'tap': sounds.tap(); break;
+        case 'success': sounds.success(); break;
+        case 'correct': sounds.success(); break;
+        case 'error': sounds.error(); break;
+        case 'levelUp': sounds.levelUp(); break;
+        case 'treasure': sounds.treasure(); break;
+        case 'quest': sounds.questComplete(); break;
+        case 'streak': sounds.streak(); break;
+      }
+    }
     // Play haptic feedback if available
     if ('vibrate' in navigator) {
       navigator.vibrate(effect === 'correct' ? [50, 50, 50] : [30]);
     }
   };
 
+  // Sync sound settings
+  useEffect(() => {
+    sounds.setEnabled(state.settings.soundEffectsEnabled !== false);
+  }, [state.settings.soundEffectsEnabled]);
+
   // Apply theme on mount
   useEffect(() => {
     applyLexiaTheme(state.settings.theme);
   }, [state.settings.theme]);
+
+  // Get current achievement stats
+  const getAchievementStats = (): AchievementStats => ({
+    totalXp: state.progress.xp,
+    questsCompleted: state.completedQuests.length,
+    streak: state.progress.streak,
+    longestStreak: state.progress.longestStreak,
+    level: state.progress.level,
+    daysActive: Object.keys(state.xpHistory || {}).length,
+    ownedItems: state.ownedItems.length,
+    treasuresFound: state.progress.treasuresFound || 0,
+  });
+
+  // Check for new achievements after state changes
+  useEffect(() => {
+    if (!state.hasOnboarded) return;
+    
+    const stats = getAchievementStats();
+    const newAchievements = checkNewAchievements(stats, state.unlockedAchievements || []);
+    
+    if (newAchievements.length > 0) {
+      // Show the first new achievement
+      setNewAchievement(newAchievements[0]);
+      
+      // Update unlocked achievements
+      setState(prev => ({
+        ...prev,
+        unlockedAchievements: [
+          ...(prev.unlockedAchievements || []),
+          ...newAchievements.map(a => a.id),
+        ],
+      }));
+    }
+  }, [state.progress.xp, state.progress.streak, state.progress.level, state.completedQuests.length]);
 
   // Check and update streak on mount
   useEffect(() => {
@@ -300,6 +362,26 @@ const LexiaHome: React.FC = () => {
     return <EnhancedOnboarding onComplete={handleCharacterComplete} />;
   }
 
+  // Trophy Collection Screen
+  if (view === 'trophies') {
+    return (
+      <TrophyCollection
+        stats={getAchievementStats()}
+        unlockedAchievements={state.unlockedAchievements || []}
+        onClose={() => setView('home')}
+        onToggleSound={() => {
+          const newEnabled = !state.settings.soundEffectsEnabled;
+          setState(prev => ({
+            ...prev,
+            settings: { ...prev.settings, soundEffectsEnabled: newEnabled },
+          }));
+          sounds.setEnabled(newEnabled);
+        }}
+        soundEnabled={state.settings.soundEffectsEnabled !== false}
+      />
+    );
+  }
+
   // Victory Screen
   if (view === 'victory' && questResults) {
     return (
@@ -442,11 +524,20 @@ const LexiaHome: React.FC = () => {
   // Home View
   return (
     <div className="min-h-screen bg-background pb-32 safe-area-inset">
+      {/* Achievement Unlock Modal */}
+      <AchievementUnlockModal
+        achievement={newAchievement}
+        onClose={() => setNewAchievement(null)}
+      />
+
       {/* Treasure Found Modal */}
       {foundTreasure && (
         <TreasureFoundModal
           treasure={foundTreasure}
-          onClose={() => setFoundTreasure(null)}
+          onClose={() => {
+            setFoundTreasure(null);
+            playEffect('treasure');
+          }}
           onSpeak={speak}
         />
       )}
@@ -628,42 +719,38 @@ const LexiaHome: React.FC = () => {
       </main>
 
       {/* Bottom Nav - iOS safe area */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t-2 border-border px-6 py-4 pb-safe flex justify-around z-50">
+      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t-2 border-border px-4 py-4 pb-safe flex justify-around z-50">
         <button
-          onClick={() => setView('home')}
-          className="flex flex-col items-center gap-1 text-primary min-h-[44px] active:scale-95 transition-transform"
+          onClick={() => { playEffect('tap'); setView('home'); }}
+          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${view === 'home' ? 'text-primary' : 'text-muted-foreground'}`}
           aria-label="Go to quests"
-          role="button"
         >
-          <Award size={24} />
+          <Award size={22} />
           <span className="text-xs font-bold">Quests</span>
         </button>
         <button
-          onClick={() => setView('map')}
-          className="flex flex-col items-center gap-1 text-muted-foreground min-h-[44px] active:scale-95 transition-transform"
-          aria-label="View world map"
-          role="button"
+          onClick={() => { playEffect('tap'); setView('trophies'); }}
+          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${view === 'trophies' ? 'text-primary' : 'text-muted-foreground'}`}
+          aria-label="View trophies"
         >
-          <Map size={24} />
+          <Trophy size={22} />
+          <span className="text-xs font-bold">Trophies</span>
+        </button>
+        <button
+          onClick={() => { playEffect('tap'); setView('map'); }}
+          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${view === 'map' ? 'text-primary' : 'text-muted-foreground'}`}
+          aria-label="View world map"
+        >
+          <Map size={22} />
           <span className="text-xs font-bold">Map</span>
         </button>
         <button
-          onClick={() => setView('profile')}
-          className="flex flex-col items-center gap-1 text-muted-foreground min-h-[44px] active:scale-95 transition-transform"
+          onClick={() => { playEffect('tap'); setView('profile'); }}
+          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${view === 'profile' ? 'text-primary' : 'text-muted-foreground'}`}
           aria-label="View profile"
-          role="button"
         >
-          <User size={24} />
+          <User size={22} />
           <span className="text-xs font-bold">Profile</span>
-        </button>
-        <button
-          onClick={() => setView('profile')}
-          className="flex flex-col items-center gap-1 text-muted-foreground min-h-[44px] active:scale-95 transition-transform"
-          aria-label="Open settings"
-          role="button"
-        >
-          <Settings size={24} />
-          <span className="text-xs font-bold">Settings</span>
         </button>
       </nav>
     </div>
