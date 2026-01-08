@@ -10,16 +10,17 @@ interface RhymeHuntGameProps {
   onBack: () => void;
 }
 
-// Rhyme pairs for the game
+// Wilson 1.1 Rhyme pairs ONLY - short 'a' with f, l, m, n, r, s consonants
+// Avoiding welded sounds like "am", "an" patterns that belong to 1.5
 const RHYME_SETS = [
-  { target: 'cat', rhymes: ['bat', 'hat', 'mat', 'rat'], nonRhymes: ['dog', 'cup', 'pen', 'sun'] },
-  { target: 'man', rhymes: ['can', 'fan', 'pan', 'ran'], nonRhymes: ['pig', 'top', 'bed', 'leg'] },
-  { target: 'hop', rhymes: ['top', 'pop', 'mop', 'stop'], nonRhymes: ['cat', 'run', 'big', 'fun'] },
-  { target: 'bug', rhymes: ['rug', 'hug', 'mug', 'jug'], nonRhymes: ['map', 'sit', 'hot', 'wet'] },
-  { target: 'hen', rhymes: ['pen', 'ten', 'men', 'den'], nonRhymes: ['cup', 'bat', 'log', 'pin'] },
-  { target: 'sun', rhymes: ['run', 'fun', 'bun', 'gun'], nonRhymes: ['cat', 'bed', 'top', 'ham'] },
-  { target: 'pig', rhymes: ['big', 'dig', 'wig', 'fig'], nonRhymes: ['cat', 'sun', 'pen', 'mop'] },
-  { target: 'bed', rhymes: ['red', 'fed', 'led', 'wed'], nonRhymes: ['cat', 'sun', 'pig', 'hop'] },
+  { target: 'sat', rhymes: ['mat', 'rat', 'fat', 'lat'], nonRhymes: ['lap', 'sap', 'fan', 'ran'] },
+  { target: 'rat', rhymes: ['sat', 'mat', 'fat', 'lat'], nonRhymes: ['tap', 'nap', 'tan', 'ran'] },
+  { target: 'lap', rhymes: ['nap', 'sap', 'tap', 'rap'], nonRhymes: ['sat', 'mat', 'fat', 'tan'] },
+  { target: 'nap', rhymes: ['lap', 'sap', 'tap', 'rap'], nonRhymes: ['rat', 'sat', 'fan', 'ran'] },
+  { target: 'tan', rhymes: ['fan', 'ran', 'lan', 'nan'], nonRhymes: ['sat', 'mat', 'lap', 'tap'] },
+  { target: 'fan', rhymes: ['tan', 'ran', 'lan', 'nan'], nonRhymes: ['rat', 'fat', 'nap', 'sap'] },
+  { target: 'fast', rhymes: ['last', 'mast', 'past', 'rast'], nonRhymes: ['sat', 'lap', 'fan', 'tap'] },
+  { target: 'raft', rhymes: ['raft', 'aft', 'daft', 'laft'], nonRhymes: ['mat', 'nap', 'tan', 'sap'] },
 ];
 
 export const RhymeHuntGame: React.FC<RhymeHuntGameProps> = ({

@@ -17,18 +17,18 @@ interface Card {
   pairId: string;
 }
 
-// Word-image pairs
+// Wilson 1.1 Word-image pairs ONLY - short 'a' with f, l, m, n, r, s consonants
 const PAIRS = [
-  { word: 'cat', image: '🐱' },
-  { word: 'dog', image: '🐶' },
-  { word: 'sun', image: '☀️' },
-  { word: 'hat', image: '🎩' },
-  { word: 'bug', image: '🐛' },
-  { word: 'pig', image: '🐷' },
-  { word: 'bat', image: '🦇' },
-  { word: 'cup', image: '☕' },
-  { word: 'bed', image: '🛏️' },
-  { word: 'fish', image: '🐟' },
+  { word: 'rat', image: '🐀' },
+  { word: 'mat', image: '🧹' },
+  { word: 'fan', image: '💨' },
+  { word: 'sat', image: '🪑' },
+  { word: 'nap', image: '😴' },
+  { word: 'lap', image: '🏃' },
+  { word: 'fat', image: '🍔' },
+  { word: 'tan', image: '🌞' },
+  { word: 'sap', image: '🌲' },
+  { word: 'raft', image: '🚣' },
 ];
 
 export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({

@@ -37,8 +37,9 @@ export const CURRICULUM: CurriculumType = {
           { c: 't', t: 'c' }, { c: 's', t: 'c' }, { c: 'f', t: 'c' },
           { c: 'l', t: 'c' }, { c: 'n', t: 'c' }, { c: 'r', t: 'c' }
         ],
-        words: ["map", "mat", "sat", "sam", "rat", "fat", "fan", "ran", "man"],
-        sentences: ["The cat sat.", "Tap the map.", "A fat rat ran."]
+        // Wilson 1.1: CVC with short 'a' and consonants f, l, m, n, r, s (+ t, p for endings)
+        words: ["mat", "sat", "rat", "fat", "fan", "ran", "tan", "lap", "nap", "sap", "raft", "last"],
+        sentences: ["The rat sat.", "Tap the mat.", "A fat rat ran fast."]
       },
       "1.2": {
         id: "1.2",

@@ -82,20 +82,25 @@ export function isVowel(letter: string): boolean {
   return ['a', 'e', 'i', 'o', 'u'].includes(letter.toLowerCase());
 }
 
-// CVC words for Wilson Step 1
+// Wilson 1.1 CVC words ONLY - short 'a' with consonants f, l, m, n, r, s (+ t, p for word endings)
+// Avoiding problematic phonetic combinations like "am" which is a welded sound (1.5)
+export const CVC_WORDS_1_1 = [
+  'mat', 'sat', 'rat', 'fat', 'lat', 'nat',  // -at family
+  'fan', 'ran', 'tan', 'lan',                 // -an family (avoiding 'man' - "am" sound)
+  'lap', 'nap', 'sap', 'rap', 'tap',          // -ap family
+  'lass', 'mass', 'pass',                     // -ass family
+  'raft', 'raft',                              // -aft family
+  'last', 'fast', 'mast', 'past',             // -ast family
+];
+
+// Full CVC words for all Wilson Step 1 substeps (1.1-1.6)
 export const CVC_WORDS = [
-  'cat', 'bat', 'sat', 'hat', 'mat', 'rat', 'pat', 'fat',
-  'bed', 'red', 'fed', 'led', 'wed',
-  'sit', 'hit', 'pit', 'bit', 'fit', 'kit',
-  'hot', 'pot', 'dot', 'got', 'not', 'lot', 'rot', 'cot',
-  'cup', 'pup', 'sun', 'run', 'fun', 'bun', 'gun', 'nut', 'hut', 'but', 'cut',
-  'pig', 'big', 'dig', 'fig', 'wig', 'jig',
-  'dog', 'log', 'fog', 'hog', 'jog', 'bog',
-  'man', 'can', 'fan', 'pan', 'ran', 'tan', 'van',
-  'pen', 'hen', 'ten', 'den', 'men',
-  'pin', 'tin', 'win', 'bin', 'fin', 'sin',
-  'top', 'hop', 'mop', 'pop', 'cop', 'bop',
-  'tub', 'rub', 'hub', 'cub', 'sub', 'pub',
+  // 1.1 words (short 'a' with f, l, m, n, r, s)
+  'mat', 'sat', 'rat', 'fat', 'fan', 'ran', 'tan', 'lap', 'nap', 'sap', 'tap',
+  // 1.2 words (b, g, h, j, p, t, v, w)
+  'bat', 'hat', 'pat', 'vat', 'bag', 'tag', 'wag', 'jab', 'tab', 'gap',
+  // Additional common CVC for variety
+  'cat', 'cap', 'map', 'gas', 'pal',
 ];
 
 // Generate a Sound Match challenge
