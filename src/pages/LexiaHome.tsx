@@ -4,14 +4,19 @@ import { Flame, Trophy, Settings, Volume2, Map, User, Award } from 'lucide-react
 import { useStickyState } from '@/hooks/useStickyState';
 import { useLexiaAudio } from '@/hooks/useLexiaAudio';
 import { LEXIA_REGIONS, applyLexiaTheme } from '@/lib/lexiaTheme';
+import { calculateStreak, getTodayStr, getStreakMilestoneMessage, getStreakXpBonus } from '@/lib/streakUtils';
 
 // Game components
 import { WorldMap } from '@/components/game/WorldMap';
 import { SoundMatchGame } from '@/components/game/SoundMatchGame';
 import { WordBuilderGame } from '@/components/game/WordBuilderGame';
+import { RhymeHuntGame } from '@/components/game/RhymeHuntGame';
+import { MemoryMatchGame } from '@/components/game/MemoryMatchGame';
+import { SyllableSortGame } from '@/components/game/SyllableSortGame';
 import { QuestVictory } from '@/components/game/QuestVictory';
 import { Whisper } from '@/components/game/Whisper';
 import { CharacterCreation } from '@/components/game/CharacterCreation';
+import { ProfileScreen } from '@/components/game/ProfileScreen';
 import { AvatarWithAccessories } from '@/components/lexi/AvatarWithAccessories';
 
 interface LexiaGameState {
@@ -28,6 +33,7 @@ interface LexiaGameState {
     xp: number;
     streak: number;
     lastActiveDate: string;
+    longestStreak: number;
   };
   settings: {
     theme: string;
@@ -36,6 +42,7 @@ interface LexiaGameState {
   };
   ownedItems: string[];
   completedQuests: string[];
+  streakFreezeTokens: number;
 }
 
 const DEFAULT_STATE: LexiaGameState = {
@@ -48,6 +55,7 @@ const DEFAULT_STATE: LexiaGameState = {
     xp: 0,
     streak: 0,
     lastActiveDate: '',
+    longestStreak: 0,
   },
   settings: {
     theme: 'default',
@@ -56,25 +64,70 @@ const DEFAULT_STATE: LexiaGameState = {
   },
   ownedItems: [],
   completedQuests: [],
+  streakFreezeTokens: 1, // Start with 1 free freeze
 };
 
-type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'victory' | 'profile' | 'settings';
+type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'rhymeHunt' | 'memoryMatch' | 'syllableSort' | 'victory' | 'profile' | 'settings';
+type QuestType = 'sound' | 'word' | 'rhyme' | 'memory' | 'syllable';
 
 const LexiaHome: React.FC = () => {
-  const [state, setState] = useStickyState<LexiaGameState>(DEFAULT_STATE, 'lexia_world_v1');
+  const [state, setState] = useStickyState<LexiaGameState>(DEFAULT_STATE, 'lexia_world_v2');
   const [view, setView] = useState<GameView>('home');
   const [questResults, setQuestResults] = useState<any>(null);
-  const { speak, playEffect } = useLexiaAudio();
+  const [currentQuestType, setCurrentQuestType] = useState<QuestType>('sound');
+  const [streakMessage, setStreakMessage] = useState<string | null>(null);
+  const { speak, playEffect, setRate } = useLexiaAudio();
 
-  // Apply theme on mount
+  // Apply theme and audio settings on mount
   useEffect(() => {
     applyLexiaTheme(state.settings.theme);
-  }, [state.settings.theme]);
+    setRate(state.settings.audioSpeed);
+  }, [state.settings.theme, state.settings.audioSpeed]);
+
+  // Check and update streak on mount
+  useEffect(() => {
+    if (state.hasOnboarded) {
+      const streakCalc = calculateStreak({
+        currentStreak: state.progress.streak,
+        lastActiveDate: state.progress.lastActiveDate,
+        streakFreezeTokens: state.streakFreezeTokens,
+        longestStreak: state.progress.longestStreak,
+      });
+
+      if (streakCalc.streakContinued || streakCalc.newStreak !== state.progress.streak) {
+        const newLongest = Math.max(streakCalc.newStreak, state.progress.longestStreak);
+        
+        setState(prev => ({
+          ...prev,
+          progress: {
+            ...prev.progress,
+            streak: streakCalc.newStreak,
+            lastActiveDate: getTodayStr(),
+            longestStreak: newLongest,
+          },
+        }));
+
+        // Check for milestone
+        const milestone = getStreakMilestoneMessage(streakCalc.newStreak);
+        if (milestone) {
+          setStreakMessage(milestone);
+          playEffect('levelUp');
+        }
+      }
+
+      if (streakCalc.streakBroken && state.progress.streak > 0) {
+        speak("Oh no! Your streak was reset. Let's start building it again!");
+      }
+    }
+  }, [state.hasOnboarded]);
 
   // Welcome message
   useEffect(() => {
     if (state.hasOnboarded && view === 'home') {
-      speak(`Welcome back, ${state.character.name}! Ready for an adventure?`);
+      const greeting = state.progress.streak > 0 
+        ? `Welcome back, ${state.character.name}! You have a ${state.progress.streak} day streak!`
+        : `Welcome back, ${state.character.name}! Ready for an adventure?`;
+      speak(greeting);
     }
   }, [state.hasOnboarded]);
 
@@ -88,13 +141,28 @@ const LexiaHome: React.FC = () => {
         avatar: data.avatar,
         outfit: data.outfit,
       },
+      progress: {
+        ...prev.progress,
+        lastActiveDate: getTodayStr(),
+        streak: 1,
+      },
     }));
     speak(`Welcome, ${data.name}! Your adventure begins!`);
   };
 
-  const handleStartQuest = (questType: 'sound' | 'word') => {
+  const handleStartQuest = (questType: QuestType) => {
     playEffect('tap');
-    setView(questType === 'sound' ? 'quest' : 'wordBuilder');
+    setCurrentQuestType(questType);
+    
+    const viewMap: Record<QuestType, GameView> = {
+      sound: 'quest',
+      word: 'wordBuilder',
+      rhyme: 'rhymeHunt',
+      memory: 'memoryMatch',
+      syllable: 'syllableSort',
+    };
+    
+    setView(viewMap[questType]);
   };
 
   const handleQuestComplete = (results: any) => {
@@ -102,18 +170,28 @@ const LexiaHome: React.FC = () => {
     const accuracyBonus = results.correct === results.total ? 25 : 
                           results.correct >= results.total * 0.8 ? 10 : 0;
     const noHintBonus = results.hintsUsed === 0 ? 15 : 0;
-    const xpEarned = baseXp + accuracyBonus + noHintBonus;
+    const streakBonus = getStreakXpBonus(state.progress.streak);
+    const xpEarned = baseXp + accuracyBonus + noHintBonus + streakBonus;
+
+    const newXp = state.progress.xp + xpEarned;
+    const newLevel = Math.floor(newXp / 100) + 1;
+    const leveledUp = newLevel > state.progress.level;
 
     setState(prev => ({
       ...prev,
       progress: {
         ...prev.progress,
-        xp: prev.progress.xp + xpEarned,
-        level: Math.floor((prev.progress.xp + xpEarned) / 100) + 1,
+        xp: newXp,
+        level: newLevel,
+        lastActiveDate: getTodayStr(),
       },
     }));
 
-    setQuestResults({ ...results, xpEarned });
+    if (leveledUp) {
+      playEffect('levelUp');
+    }
+
+    setQuestResults({ ...results, xpEarned, streakBonus, leveledUp, newLevel });
     setView('victory');
   };
 
@@ -124,7 +202,37 @@ const LexiaHome: React.FC = () => {
 
   const handleRetry = () => {
     setQuestResults(null);
-    setView('quest');
+    // Go back to the same quest type
+    handleStartQuest(currentQuestType);
+  };
+
+  const handleUpdateSettings = (newSettings: Partial<LexiaGameState['settings']>) => {
+    setState(prev => ({
+      ...prev,
+      settings: { ...prev.settings, ...newSettings },
+    }));
+  };
+
+  const handleUpdateCharacter = (newCharacter: Partial<LexiaGameState['character']>) => {
+    setState(prev => ({
+      ...prev,
+      character: { ...prev.character, ...newCharacter },
+    }));
+  };
+
+  const handleUseStreakFreeze = () => {
+    if (state.streakFreezeTokens > 0) {
+      setState(prev => ({
+        ...prev,
+        streakFreezeTokens: prev.streakFreezeTokens - 1,
+        progress: {
+          ...prev.progress,
+          lastActiveDate: getTodayStr(),
+        },
+      }));
+      playEffect('correct');
+      speak('Streak freeze activated! Your streak is protected!');
+    }
   };
 
   // Character Creation
@@ -136,7 +244,7 @@ const LexiaHome: React.FC = () => {
   if (view === 'victory' && questResults) {
     return (
       <QuestVictory
-        questName="Sound Springs Discovery"
+        questName={getQuestName(currentQuestType)}
         results={questResults}
         xpEarned={questResults.xpEarned}
         onContinue={handleContinue}
@@ -145,7 +253,24 @@ const LexiaHome: React.FC = () => {
     );
   }
 
-  // Quest View - Sound Match
+  // Profile Screen
+  if (view === 'profile') {
+    return (
+      <ProfileScreen
+        character={state.character}
+        progress={state.progress}
+        settings={state.settings}
+        ownedItems={state.ownedItems}
+        streakFreezeTokens={state.streakFreezeTokens}
+        onBack={() => setView('home')}
+        onUpdateSettings={handleUpdateSettings}
+        onUpdateCharacter={handleUpdateCharacter}
+        onUseStreakFreeze={handleUseStreakFreeze}
+      />
+    );
+  }
+
+  // Quest Views
   if (view === 'quest') {
     return (
       <SoundMatchGame
@@ -157,12 +282,41 @@ const LexiaHome: React.FC = () => {
     );
   }
 
-  // Quest View - Word Builder
   if (view === 'wordBuilder') {
     return (
       <WordBuilderGame
         wilsonStep={state.progress.wilsonStep}
         questionsCount={5}
+        onComplete={handleQuestComplete}
+        onBack={() => setView('home')}
+      />
+    );
+  }
+
+  if (view === 'rhymeHunt') {
+    return (
+      <RhymeHuntGame
+        questionsCount={5}
+        onComplete={handleQuestComplete}
+        onBack={() => setView('home')}
+      />
+    );
+  }
+
+  if (view === 'memoryMatch') {
+    return (
+      <MemoryMatchGame
+        questionsCount={6}
+        onComplete={handleQuestComplete}
+        onBack={() => setView('home')}
+      />
+    );
+  }
+
+  if (view === 'syllableSort') {
+    return (
+      <SyllableSortGame
+        questionsCount={6}
         onComplete={handleQuestComplete}
         onBack={() => setView('home')}
       />
@@ -202,15 +356,30 @@ const LexiaHome: React.FC = () => {
   // Home View
   return (
     <div className="min-h-screen bg-background pb-32">
+      {/* Streak Milestone Toast */}
+      {streakMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -50 }}
+          className="fixed top-4 left-4 right-4 z-50 bg-accent text-white p-4 rounded-2xl font-bold text-center shadow-lg"
+          onClick={() => setStreakMessage(null)}
+        >
+          {streakMessage}
+        </motion.div>
+      )}
+
       {/* Header */}
       <header className="bg-card p-6 rounded-b-[40px] shadow-lg border-b-4 border-border">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
-            <AvatarWithAccessories
-              baseAvatar={state.character.avatar}
-              ownedAccessories={state.ownedItems.filter(i => !i.startsWith('pet_') && !i.startsWith('theme_'))}
-              size="md"
-            />
+            <button onClick={() => setView('profile')}>
+              <AvatarWithAccessories
+                baseAvatar={state.character.avatar}
+                ownedAccessories={state.ownedItems.filter(i => !i.startsWith('pet_') && !i.startsWith('theme_'))}
+                size="md"
+              />
+            </button>
             <div>
               <h1 className="text-2xl font-black text-foreground">{state.character.name}</h1>
               <div className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md inline-block mt-1">
@@ -229,13 +398,25 @@ const LexiaHome: React.FC = () => {
 
         {/* Stats */}
         <div className="flex gap-3">
-          <div className="flex-1 bg-accent/10 p-3 rounded-2xl flex items-center gap-3 border-2 border-accent/20">
-            <Flame className="text-accent fill-accent" size={24} />
+          <motion.div
+            className="flex-1 bg-accent/10 p-3 rounded-2xl flex items-center gap-3 border-2 border-accent/20"
+            animate={state.progress.streak > 0 ? { scale: [1, 1.02, 1] } : {}}
+            transition={{ repeat: Infinity, duration: 2 }}
+          >
+            <motion.div
+              animate={state.progress.streak > 0 ? { 
+                scale: [1, 1.2, 1],
+                rotate: [0, 5, -5, 0]
+              } : {}}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+            >
+              <Flame className="text-accent fill-accent" size={24} />
+            </motion.div>
             <div>
               <div className="text-xl font-black text-accent">{state.progress.streak}</div>
               <div className="text-[10px] font-bold text-accent/70 uppercase">Streak</div>
             </div>
-          </div>
+          </motion.div>
           <div className="flex-1 bg-primary/10 p-3 rounded-2xl flex items-center gap-3 border-2 border-primary/20">
             <Trophy className="text-primary" size={24} />
             <div>
@@ -268,28 +449,52 @@ const LexiaHome: React.FC = () => {
             </div>
           </div>
 
-          {/* Quest Buttons */}
-          <div className="space-y-3">
+          {/* Quest Buttons Grid */}
+          <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => handleStartQuest('sound')}
-              className="w-full h-16 bg-primary text-primary-foreground rounded-2xl text-lg font-bold shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-transform"
+              className="h-20 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
             >
               <span className="text-2xl">🔊</span>
-              Sound Match Quest
+              <span className="text-sm">Sound Match</span>
             </button>
             <button
               onClick={() => handleStartQuest('word')}
-              className="w-full h-16 bg-consonant text-consonant-text rounded-2xl text-lg font-bold shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-transform border-2 border-consonant-border"
+              className="h-20 bg-consonant text-consonant-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-consonant-border"
             >
               <span className="text-2xl">🔤</span>
-              Word Builder Quest
+              <span className="text-sm">Word Builder</span>
+            </button>
+            <button
+              onClick={() => handleStartQuest('rhyme')}
+              className="h-20 bg-vowel text-vowel-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-vowel-border"
+            >
+              <span className="text-2xl">🎵</span>
+              <span className="text-sm">Rhyme Hunt</span>
+            </button>
+            <button
+              onClick={() => handleStartQuest('memory')}
+              className="h-20 bg-digraph text-digraph-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-digraph-border"
+            >
+              <span className="text-2xl">🧠</span>
+              <span className="text-sm">Memory Match</span>
+            </button>
+            <button
+              onClick={() => handleStartQuest('syllable')}
+              className="col-span-2 h-20 bg-welded text-welded-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-welded-border"
+            >
+              <span className="text-2xl">👏</span>
+              <span className="text-sm">Syllable Sort</span>
             </button>
           </div>
         </motion.div>
 
         {/* Whisper */}
         <Whisper
-          message="Choose a quest to practice your skills!"
+          message={state.progress.streak > 0 
+            ? `Keep your ${state.progress.streak} day streak going!` 
+            : "Choose a quest to start your adventure!"
+          }
           variant="idle"
         />
       </main>
@@ -311,14 +516,17 @@ const LexiaHome: React.FC = () => {
           <span className="text-xs font-bold">Map</span>
         </button>
         <button
-          onClick={() => playEffect('tap')}
+          onClick={() => setView('profile')}
           className="flex flex-col items-center gap-1 text-muted-foreground"
         >
           <User size={24} />
           <span className="text-xs font-bold">Profile</span>
         </button>
         <button
-          onClick={() => playEffect('tap')}
+          onClick={() => {
+            playEffect('tap');
+            setView('profile');
+          }}
           className="flex flex-col items-center gap-1 text-muted-foreground"
         >
           <Settings size={24} />
@@ -328,5 +536,16 @@ const LexiaHome: React.FC = () => {
     </div>
   );
 };
+
+function getQuestName(type: QuestType): string {
+  const names: Record<QuestType, string> = {
+    sound: 'Sound Springs Discovery',
+    word: 'Word Builder Challenge',
+    rhyme: 'Rhyme Hunt Adventure',
+    memory: 'Memory Match Quest',
+    syllable: 'Syllable Sort Mission',
+  };
+  return names[type];
+}
 
 export default LexiaHome;
