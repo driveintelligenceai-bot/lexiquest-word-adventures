@@ -97,7 +97,10 @@ const LexiaHome: React.FC = () => {
   const streakBonus = getStreakXpBonus(state.progress.streak);
 
   const playEffect = (effect: string) => {
-    // Minimal audio feedback
+    // Play haptic feedback if available
+    if ('vibrate' in navigator) {
+      navigator.vibrate(effect === 'correct' ? [50, 50, 50] : [30]);
+    }
   };
 
   // Apply theme on mount
@@ -510,37 +513,47 @@ const LexiaHome: React.FC = () => {
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => handleStartQuest('sound')}
-              className="h-20 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
+              className="min-h-[80px] bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
+              aria-label="Start Sound Match quest"
+              role="button"
             >
-              <span className="text-2xl">🔊</span>
+              <span className="text-2xl" aria-hidden="true">🔊</span>
               <span className="text-sm">Sound Match</span>
             </button>
             <button
               onClick={() => handleStartQuest('word')}
-              className="h-20 bg-consonant text-consonant-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-consonant-border"
+              className="min-h-[80px] bg-consonant text-consonant-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-consonant-border"
+              aria-label="Start Word Builder quest"
+              role="button"
             >
-              <span className="text-2xl">🔤</span>
+              <span className="text-2xl" aria-hidden="true">🔤</span>
               <span className="text-sm">Word Builder</span>
             </button>
             <button
               onClick={() => handleStartQuest('rhyme')}
-              className="h-20 bg-vowel text-vowel-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-vowel-border"
+              className="min-h-[80px] bg-vowel text-vowel-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-vowel-border"
+              aria-label="Start Rhyme Hunt quest"
+              role="button"
             >
-              <span className="text-2xl">🎵</span>
+              <span className="text-2xl" aria-hidden="true">🎵</span>
               <span className="text-sm">Rhyme Hunt</span>
             </button>
             <button
               onClick={() => handleStartQuest('memory')}
-              className="h-20 bg-digraph text-digraph-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-digraph-border"
+              className="min-h-[80px] bg-digraph text-digraph-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-digraph-border"
+              aria-label="Start Memory Match quest"
+              role="button"
             >
-              <span className="text-2xl">🧠</span>
+              <span className="text-2xl" aria-hidden="true">🧠</span>
               <span className="text-sm">Memory Match</span>
             </button>
             <button
               onClick={() => handleStartQuest('syllable')}
-              className="col-span-2 h-20 bg-welded text-welded-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-welded-border"
+              className="col-span-2 min-h-[80px] bg-welded text-welded-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-welded-border"
+              aria-label="Start Syllable Sort quest"
+              role="button"
             >
-              <span className="text-2xl">👏</span>
+              <span className="text-2xl" aria-hidden="true">👏</span>
               <span className="text-sm">Syllable Sort</span>
             </button>
           </div>
@@ -559,35 +572,40 @@ const LexiaHome: React.FC = () => {
         />
       </main>
 
-      {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t-2 border-border px-6 py-4 flex justify-around">
+      {/* Bottom Nav - iOS safe area */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t-2 border-border px-6 py-4 pb-safe flex justify-around z-50">
         <button
           onClick={() => setView('home')}
-          className="flex flex-col items-center gap-1 text-primary"
+          className="flex flex-col items-center gap-1 text-primary min-h-[44px] active:scale-95 transition-transform"
+          aria-label="Go to quests"
+          role="button"
         >
           <Award size={24} />
           <span className="text-xs font-bold">Quests</span>
         </button>
         <button
           onClick={() => setView('map')}
-          className="flex flex-col items-center gap-1 text-muted-foreground"
+          className="flex flex-col items-center gap-1 text-muted-foreground min-h-[44px] active:scale-95 transition-transform"
+          aria-label="View world map"
+          role="button"
         >
           <Map size={24} />
           <span className="text-xs font-bold">Map</span>
         </button>
         <button
           onClick={() => setView('profile')}
-          className="flex flex-col items-center gap-1 text-muted-foreground"
+          className="flex flex-col items-center gap-1 text-muted-foreground min-h-[44px] active:scale-95 transition-transform"
+          aria-label="View profile"
+          role="button"
         >
           <User size={24} />
           <span className="text-xs font-bold">Profile</span>
         </button>
         <button
-          onClick={() => {
-            playEffect('tap');
-            setView('profile');
-          }}
-          className="flex flex-col items-center gap-1 text-muted-foreground"
+          onClick={() => setView('profile')}
+          className="flex flex-col items-center gap-1 text-muted-foreground min-h-[44px] active:scale-95 transition-transform"
+          aria-label="Open settings"
+          role="button"
         >
           <Settings size={24} />
           <span className="text-xs font-bold">Settings</span>

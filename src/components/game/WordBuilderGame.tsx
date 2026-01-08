@@ -170,8 +170,9 @@ export const WordBuilderGame: React.FC<WordBuilderGameProps> = ({
       <div className="flex items-center justify-between mb-6">
         <button
           onClick={onBack}
-          className="h-12 w-12 bg-muted rounded-full flex items-center justify-center active:scale-95"
+          className="h-12 w-12 min-h-[44px] min-w-[44px] bg-muted rounded-full flex items-center justify-center active:scale-95 transition-transform"
           aria-label="Go back"
+          role="button"
         >
           <ArrowLeft size={20} />
         </button>
@@ -185,8 +186,9 @@ export const WordBuilderGame: React.FC<WordBuilderGameProps> = ({
 
         <button
           onClick={handleHint}
-          className="h-12 w-12 bg-muted rounded-full flex items-center justify-center active:scale-95"
+          className="h-12 w-12 min-h-[44px] min-w-[44px] bg-muted rounded-full flex items-center justify-center active:scale-95 transition-transform"
           aria-label="Get hint"
+          role="button"
         >
           <HelpCircle size={20} />
         </button>
@@ -280,26 +282,30 @@ export const WordBuilderGame: React.FC<WordBuilderGameProps> = ({
       <div className="flex gap-4 justify-center">
         <button
           onClick={() => speak(currentWord)}
-          className="h-14 w-14 bg-consonant text-consonant-text rounded-full flex items-center justify-center active:scale-95"
+          className="h-14 w-14 min-h-[44px] min-w-[44px] bg-consonant text-consonant-text rounded-full flex items-center justify-center active:scale-95 transition-transform"
           aria-label="Hear word"
+          role="button"
         >
           <Volume2 size={24} />
         </button>
         <button
           onClick={handleReset}
-          className="h-14 w-14 bg-muted text-muted-foreground rounded-full flex items-center justify-center active:scale-95"
-          aria-label="Reset"
+          className="h-14 w-14 min-h-[44px] min-w-[44px] bg-muted text-muted-foreground rounded-full flex items-center justify-center active:scale-95 transition-transform"
+          aria-label="Reset letters"
+          role="button"
         >
           <RefreshCw size={24} />
         </button>
         <button
           onClick={handleCheck}
           disabled={built.length === 0 || feedback === 'correct'}
-          className={`h-14 px-8 rounded-full font-bold flex items-center justify-center gap-2 transition-all active:scale-95 ${
+          className={`h-14 px-8 min-h-[44px] rounded-full font-bold flex items-center justify-center gap-2 transition-all active:scale-95 ${
             built.length > 0 && feedback !== 'correct'
               ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground cursor-not-allowed'
+              : 'bg-muted text-muted-foreground cursor-not-allowed opacity-50'
           }`}
+          aria-label="Check your answer"
+          role="button"
         >
           Check!
         </button>
