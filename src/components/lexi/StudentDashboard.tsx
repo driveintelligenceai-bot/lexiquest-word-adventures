@@ -1,7 +1,8 @@
 import React from 'react';
-import { Flame, Trophy, Settings, School, Home, Volume2, Eye } from 'lucide-react';
+import { Flame, Trophy, Settings, School, Home, Volume2, Eye, ShoppingBag } from 'lucide-react';
 import { QuestCard, Quest } from './QuestCard';
 import { speak } from '@/lib/speech';
+import { sounds } from '@/lib/sounds';
 
 interface StudentData {
   name: string;
@@ -17,9 +18,11 @@ interface StudentDashboardProps {
   streak: number;
   dailyProgress: Record<string, boolean>;
   quests: Quest[];
+  activePet?: string;
   onQuestSelect: (quest: Quest) => void;
   onSettingsClick: () => void;
   onAccessibilityClick: () => void;
+  onStoreClick: () => void;
 }
 
 export const StudentDashboard: React.FC<StudentDashboardProps> = ({
@@ -27,9 +30,11 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   streak,
   dailyProgress,
   quests,
+  activePet,
   onQuestSelect,
   onSettingsClick,
   onAccessibilityClick,
+  onStoreClick,
 }) => {
   const tutorQuests = quests.filter(q => q.role === 'tutor');
   const homeQuests = quests.filter(q => q.role === 'home');
@@ -104,7 +109,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         </div>
 
         {/* Stats Bar */}
-        <div className="flex gap-4">
+        <div className="flex gap-3">
           <div className="flex-1 bg-accent/10 p-3 rounded-2xl flex items-center gap-3 border-2 border-accent/20">
             <div className="bg-card p-2 rounded-xl shadow-sm">
               <Flame className="text-accent fill-accent" size={20} />
@@ -114,15 +119,18 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               <div className="text-[10px] font-bold text-accent/70 uppercase">Streak</div>
             </div>
           </div>
-          <div className="flex-1 bg-secondary p-3 rounded-2xl flex items-center gap-3 border-2 border-border">
+          <button
+            onClick={() => { sounds.tap(); onStoreClick(); }}
+            className="flex-1 bg-primary/10 p-3 rounded-2xl flex items-center gap-3 border-2 border-primary/20 hover:bg-primary/20 transition-colors active:scale-95"
+          >
             <div className="bg-card p-2 rounded-xl shadow-sm">
-              <Trophy className="text-primary" size={20} />
+              <ShoppingBag className="text-primary" size={20} />
             </div>
-            <div>
+            <div className="text-left">
               <div className="text-xl font-black text-foreground">{student.xp}</div>
-              <div className="text-[10px] font-bold text-muted-foreground uppercase">Total XP</div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase">Store</div>
             </div>
-          </div>
+          </button>
         </div>
       </header>
 
