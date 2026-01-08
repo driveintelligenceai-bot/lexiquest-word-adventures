@@ -18,17 +18,18 @@ export const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
 };
 
 // Popular kid-friendly voices sorted by preference (most popular first)
+// Changed default to prioritize natural-sounding female voices for children
 const PREFERRED_VOICES = [
-  'Google US English',    // Chrome - most common
-  'Samantha',             // iOS/macOS - very popular
-  'Microsoft David',      // Windows default
-  'Microsoft Zira',       // Windows female
-  'Alex',                 // macOS
-  'Karen',                // macOS Australian
-  'Daniel',               // macOS UK
-  'Moira',                // macOS Irish
+  'Samantha',             // iOS/macOS - warm, friendly female voice (BEST for kids)
+  'Karen',                // macOS Australian - clear and engaging
+  'Moira',                // macOS Irish - gentle and melodic
+  'Google UK English Female', // Clear British female voice
+  'Microsoft Zira',       // Windows female - friendly tone
+  'Google US English',    // Chrome - common but less warm
+  'Daniel',               // macOS UK male
+  'Microsoft David',      // Windows default male
+  'Alex',                 // macOS male
   'Fiona',                // macOS Scottish
-  'Google UK English Female',
   'Google UK English Male',
 ];
 

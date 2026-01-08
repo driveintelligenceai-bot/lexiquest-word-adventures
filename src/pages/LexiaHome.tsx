@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Flame, Trophy, Settings, Volume2, Map, User, Award } from 'lucide-react';
+import { Flame, Trophy, Settings, Volume2, Map, User, Award, Users } from 'lucide-react';
 import { useStickyState } from '@/hooks/useStickyState';
 import { useVoiceSettings } from '@/hooks/useVoiceSettings';
 import { applyLexiaTheme } from '@/lib/lexiaTheme';
@@ -22,6 +22,7 @@ import { DailyQuests, generateDailyQuests, DailyQuest } from '@/components/game/
 import { StoryWorldMap } from '@/components/game/StoryWorldMap';
 import { TreasureFoundModal } from '@/components/game/TreasureFoundModal';
 import { JumbleMonsterModal } from '@/components/game/JumbleMonsterModal';
+import { ParentDashboard } from '@/components/game/ParentDashboard';
 
 interface LexiaGameState {
   hasOnboarded: boolean;
@@ -44,11 +45,15 @@ interface LexiaGameState {
     theme: string;
     audioSpeed: number;
     dyslexiaFont: boolean;
+    dailyTimeLimit: number;
+    voiceEnabled: boolean;
   };
   ownedItems: string[];
   completedQuests: string[];
   completedToday: string[];
   streakFreezeTokens: number;
+  xpHistory: Record<string, number>;
+  sessionHistory: Record<string, number>;
 }
 
 const DEFAULT_STATE: LexiaGameState = {
@@ -67,14 +72,18 @@ const DEFAULT_STATE: LexiaGameState = {
     theme: 'default',
     audioSpeed: 0.9,
     dyslexiaFont: true,
+    dailyTimeLimit: 30,
+    voiceEnabled: true,
   },
   ownedItems: [],
   completedQuests: [],
   completedToday: [],
   streakFreezeTokens: 1,
+  xpHistory: {},
+  sessionHistory: {},
 };
 
-type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'rhymeHunt' | 'memoryMatch' | 'syllableSort' | 'victory' | 'profile' | 'settings';
+type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'rhymeHunt' | 'memoryMatch' | 'syllableSort' | 'victory' | 'profile' | 'settings' | 'parent';
 type QuestType = 'sound' | 'word' | 'rhyme' | 'memory' | 'syllable';
 
 const LexiaHome: React.FC = () => {
@@ -201,18 +210,29 @@ const LexiaHome: React.FC = () => {
     const treasureXp = treasure?.xpBonus || 0;
     
     const xpEarned = baseXp + accuracyBonus + noHintBonus + streakBonusXp + treasureXp;
-
     const newXp = state.progress.xp + xpEarned;
     const newLevel = Math.floor(newXp / 100) + 1;
     const leveledUp = newLevel > state.progress.level;
 
+    const today = getTodayStr();
+    
     setState(prev => ({
       ...prev,
       progress: {
         ...prev.progress,
         xp: newXp,
         level: newLevel,
-        lastActiveDate: getTodayStr(),
+        lastActiveDate: today,
+      },
+      // Track XP history for parent dashboard
+      xpHistory: {
+        ...prev.xpHistory,
+        [today]: (prev.xpHistory[today] || 0) + xpEarned,
+      },
+      // Track session time (estimate 3 min per quest)
+      sessionHistory: {
+        ...prev.sessionHistory,
+        [today]: (prev.sessionHistory[today] || 0) + 3,
       },
     }));
 
@@ -289,6 +309,31 @@ const LexiaHome: React.FC = () => {
         xpEarned={questResults.xpEarned}
         onContinue={handleContinue}
         onRetry={handleRetry}
+      />
+    );
+  }
+
+  // Parent Dashboard
+  if (view === 'parent') {
+    return (
+      <ParentDashboard
+        childName={state.character.name}
+        childAvatar={state.character.avatar}
+        progress={state.progress}
+        xpHistory={state.xpHistory || {}}
+        sessionHistory={state.sessionHistory || {}}
+        completedQuests={state.completedQuests}
+        settings={{
+          dailyTimeLimit: state.settings.dailyTimeLimit || 30,
+          voiceEnabled: state.settings.voiceEnabled !== false,
+        }}
+        onBack={() => setView('home')}
+        onUpdateSettings={(updates) => {
+          setState(prev => ({
+            ...prev,
+            settings: { ...prev.settings, ...updates },
+          }));
+        }}
       />
     );
   }
@@ -448,12 +493,22 @@ const LexiaHome: React.FC = () => {
             </div>
           </div>
 
-          <button
-            onClick={() => speak(`Hello ${state.character.name}!`)}
-            className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center active:scale-95"
-          >
-            <Volume2 size={20} />
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setView('parent')}
+              className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center active:scale-95 transition-transform"
+              aria-label="Parent dashboard"
+            >
+              <Users size={20} />
+            </button>
+            <button
+              onClick={() => speak(`Hello ${state.character.name}!`)}
+              className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center active:scale-95 transition-transform"
+              aria-label="Speak greeting"
+            >
+              <Volume2 size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Stats */}
