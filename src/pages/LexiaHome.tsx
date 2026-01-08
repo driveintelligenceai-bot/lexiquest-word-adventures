@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Flame, Trophy, Settings, Volume2, Map, User, Award } from 'lucide-react';
 import { useStickyState } from '@/hooks/useStickyState';
-import { useLexiaAudio } from '@/hooks/useLexiaAudio';
+import { useVoiceSettings } from '@/hooks/useVoiceSettings';
 import { LEXIA_REGIONS, applyLexiaTheme } from '@/lib/lexiaTheme';
 import { calculateStreak, getTodayStr, getStreakMilestoneMessage, getStreakXpBonus } from '@/lib/streakUtils';
 
@@ -14,10 +14,11 @@ import { RhymeHuntGame } from '@/components/game/RhymeHuntGame';
 import { MemoryMatchGame } from '@/components/game/MemoryMatchGame';
 import { SyllableSortGame } from '@/components/game/SyllableSortGame';
 import { QuestVictory } from '@/components/game/QuestVictory';
-import { Whisper } from '@/components/game/Whisper';
-import { CharacterCreation } from '@/components/game/CharacterCreation';
+import { NPCGuide } from '@/components/game/NPCGuide';
+import { EnhancedOnboarding } from '@/components/game/EnhancedOnboarding';
 import { ProfileScreen } from '@/components/game/ProfileScreen';
 import { AvatarWithAccessories } from '@/components/lexi/AvatarWithAccessories';
+import { DailyQuests, generateDailyQuests, DailyQuest } from '@/components/game/DailyQuests';
 
 interface LexiaGameState {
   hasOnboarded: boolean;
@@ -25,6 +26,7 @@ interface LexiaGameState {
     name: string;
     avatar: string;
     outfit: string;
+    ageGroup: 'young' | 'older';
   };
   progress: {
     currentRegion: string;
@@ -42,12 +44,13 @@ interface LexiaGameState {
   };
   ownedItems: string[];
   completedQuests: string[];
+  completedToday: string[];
   streakFreezeTokens: number;
 }
 
 const DEFAULT_STATE: LexiaGameState = {
   hasOnboarded: false,
-  character: { name: 'Word Quester', avatar: '🦊', outfit: 'explorer' },
+  character: { name: 'Word Quester', avatar: '🦊', outfit: 'explorer', ageGroup: 'young' },
   progress: {
     currentRegion: 'phoneme_forest',
     wilsonStep: 1,
@@ -64,19 +67,31 @@ const DEFAULT_STATE: LexiaGameState = {
   },
   ownedItems: [],
   completedQuests: [],
-  streakFreezeTokens: 1, // Start with 1 free freeze
+  completedToday: [],
+  streakFreezeTokens: 1,
 };
 
 type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'rhymeHunt' | 'memoryMatch' | 'syllableSort' | 'victory' | 'profile' | 'settings';
 type QuestType = 'sound' | 'word' | 'rhyme' | 'memory' | 'syllable';
 
 const LexiaHome: React.FC = () => {
-  const [state, setState] = useStickyState<LexiaGameState>(DEFAULT_STATE, 'lexia_world_v2');
+  const [state, setState] = useStickyState<LexiaGameState>(DEFAULT_STATE, 'lexia_world_v3');
   const [view, setView] = useState<GameView>('home');
   const [questResults, setQuestResults] = useState<any>(null);
   const [currentQuestType, setCurrentQuestType] = useState<QuestType>('sound');
   const [streakMessage, setStreakMessage] = useState<string | null>(null);
-  const { speak, playEffect, setRate } = useLexiaAudio();
+  const { speak, settings: voiceSettings } = useVoiceSettings();
+  
+  const dailyQuests = generateDailyQuests(
+    state.progress.wilsonStep,
+    state.character.ageGroup,
+    state.completedToday
+  );
+  const streakBonus = getStreakXpBonus(state.progress.streak);
+
+  const playEffect = (effect: string) => {
+    // Minimal audio feedback
+  };
 
   // Apply theme and audio settings on mount
   useEffect(() => {
@@ -131,8 +146,7 @@ const LexiaHome: React.FC = () => {
     }
   }, [state.hasOnboarded]);
 
-  const handleCharacterComplete = (data: { name: string; avatar: string; outfit: string }) => {
-    playEffect('complete');
+  const handleCharacterComplete = (data: { name: string; avatar: string; ageGroup: 'young' | 'older'; outfit: string }) => {
     setState(prev => ({
       ...prev,
       hasOnboarded: true,
@@ -140,6 +154,7 @@ const LexiaHome: React.FC = () => {
         name: data.name,
         avatar: data.avatar,
         outfit: data.outfit,
+        ageGroup: data.ageGroup,
       },
       progress: {
         ...prev.progress,
@@ -147,7 +162,6 @@ const LexiaHome: React.FC = () => {
         streak: 1,
       },
     }));
-    speak(`Welcome, ${data.name}! Your adventure begins!`);
   };
 
   const handleStartQuest = (questType: QuestType) => {
@@ -235,9 +249,9 @@ const LexiaHome: React.FC = () => {
     }
   };
 
-  // Character Creation
+  // Enhanced Onboarding
   if (!state.hasOnboarded) {
-    return <CharacterCreation onComplete={handleCharacterComplete} />;
+    return <EnhancedOnboarding onComplete={handleCharacterComplete} />;
   }
 
   // Victory Screen
