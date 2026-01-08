@@ -722,7 +722,7 @@ const LexiaHome: React.FC = () => {
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t-2 border-border px-4 py-4 pb-safe flex justify-around z-50">
         <button
           onClick={() => { playEffect('tap'); setView('home'); }}
-          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${view === 'home' ? 'text-primary' : 'text-muted-foreground'}`}
+          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${(view as GameView) === 'home' ? 'text-primary' : 'text-muted-foreground'}`}
           aria-label="Go to quests"
         >
           <Award size={22} />
@@ -730,7 +730,7 @@ const LexiaHome: React.FC = () => {
         </button>
         <button
           onClick={() => { playEffect('tap'); setView('trophies'); }}
-          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${view === 'trophies' ? 'text-primary' : 'text-muted-foreground'}`}
+          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${(view as GameView) === 'trophies' ? 'text-primary' : 'text-muted-foreground'}`}
           aria-label="View trophies"
         >
           <Trophy size={22} />
@@ -738,7 +738,7 @@ const LexiaHome: React.FC = () => {
         </button>
         <button
           onClick={() => { playEffect('tap'); setView('map'); }}
-          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${view === 'map' ? 'text-primary' : 'text-muted-foreground'}`}
+          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${(view as GameView) === 'map' ? 'text-primary' : 'text-muted-foreground'}`}
           aria-label="View world map"
         >
           <Map size={22} />
@@ -746,7 +746,7 @@ const LexiaHome: React.FC = () => {
         </button>
         <button
           onClick={() => { playEffect('tap'); setView('profile'); }}
-          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${view === 'profile' ? 'text-primary' : 'text-muted-foreground'}`}
+          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${(view as GameView) === 'profile' ? 'text-primary' : 'text-muted-foreground'}`}
           aria-label="View profile"
         >
           <User size={22} />
