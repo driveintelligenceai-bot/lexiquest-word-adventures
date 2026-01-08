@@ -17,14 +17,19 @@ export const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
   volume: 1.0,
 };
 
-// Kid-friendly voice names to prioritize
+// Popular kid-friendly voices sorted by preference (most popular first)
 const PREFERRED_VOICES = [
-  'Samantha', // iOS
-  'Google US English', // Chrome
-  'Microsoft Zira', // Windows
-  'Karen', // macOS
-  'Daniel', // macOS UK
-  'Fiona', // macOS Scottish
+  'Google US English',    // Chrome - most common
+  'Samantha',             // iOS/macOS - very popular
+  'Microsoft David',      // Windows default
+  'Microsoft Zira',       // Windows female
+  'Alex',                 // macOS
+  'Karen',                // macOS Australian
+  'Daniel',               // macOS UK
+  'Moira',                // macOS Irish
+  'Fiona',                // macOS Scottish
+  'Google UK English Female',
+  'Google UK English Male',
 ];
 
 export function useVoiceSettings() {
@@ -58,17 +63,27 @@ export function useVoiceSettings() {
 
         setVoices(englishVoices.length > 0 ? englishVoices : availableVoices);
         
-        // Set selected voice
+        // Auto-select best voice: saved > preferred > first available
+        const voiceList = englishVoices.length > 0 ? englishVoices : availableVoices;
+        let bestVoice: SpeechSynthesisVoice | null = null;
+        
+        // Check for saved voice first
         if (settings.voiceURI) {
-          const savedVoice = availableVoices.find(v => v.voiceURI === settings.voiceURI);
-          if (savedVoice) {
-            setSelectedVoice(savedVoice);
-          } else {
-            setSelectedVoice(englishVoices[0] || availableVoices[0] || null);
-          }
-        } else {
-          setSelectedVoice(englishVoices[0] || availableVoices[0] || null);
+          bestVoice = availableVoices.find(v => v.voiceURI === settings.voiceURI) || null;
         }
+        
+        // If no saved voice, pick the most popular one available
+        if (!bestVoice && voiceList.length > 0) {
+          // The list is already sorted by preference, so first one is best
+          bestVoice = voiceList[0];
+          
+          // Save this as the default for next time
+          if (bestVoice && !settings.voiceURI) {
+            setSettings(prev => ({ ...prev, voiceURI: bestVoice!.voiceURI }));
+          }
+        }
+        
+        setSelectedVoice(bestVoice);
         
         setIsLoaded(true);
       }
