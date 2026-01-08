@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Flame, Trophy, Settings, Volume2, Map, User, Award } from 'lucide-react';
 import { useStickyState } from '@/hooks/useStickyState';
 import { useLexiaAudio } from '@/hooks/useLexiaAudio';
@@ -8,8 +8,10 @@ import { LEXIA_REGIONS, applyLexiaTheme } from '@/lib/lexiaTheme';
 // Game components
 import { WorldMap } from '@/components/game/WorldMap';
 import { SoundMatchGame } from '@/components/game/SoundMatchGame';
+import { WordBuilderGame } from '@/components/game/WordBuilderGame';
 import { QuestVictory } from '@/components/game/QuestVictory';
 import { Whisper } from '@/components/game/Whisper';
+import { CharacterCreation } from '@/components/game/CharacterCreation';
 import { AvatarWithAccessories } from '@/components/lexi/AvatarWithAccessories';
 
 interface LexiaGameState {
@@ -17,6 +19,7 @@ interface LexiaGameState {
   character: {
     name: string;
     avatar: string;
+    outfit: string;
   };
   progress: {
     currentRegion: string;
@@ -37,7 +40,7 @@ interface LexiaGameState {
 
 const DEFAULT_STATE: LexiaGameState = {
   hasOnboarded: false,
-  character: { name: 'Word Quester', avatar: '🦊' },
+  character: { name: 'Word Quester', avatar: '🦊', outfit: 'explorer' },
   progress: {
     currentRegion: 'phoneme_forest',
     wilsonStep: 1,
@@ -55,7 +58,7 @@ const DEFAULT_STATE: LexiaGameState = {
   completedQuests: [],
 };
 
-type GameView = 'home' | 'map' | 'quest' | 'victory' | 'profile' | 'settings';
+type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'victory' | 'profile' | 'settings';
 
 const LexiaHome: React.FC = () => {
   const [state, setState] = useStickyState<LexiaGameState>(DEFAULT_STATE, 'lexia_world_v1');
@@ -70,14 +73,28 @@ const LexiaHome: React.FC = () => {
 
   // Welcome message
   useEffect(() => {
-    if (state.hasOnboarded) {
+    if (state.hasOnboarded && view === 'home') {
       speak(`Welcome back, ${state.character.name}! Ready for an adventure?`);
     }
-  }, []);
+  }, [state.hasOnboarded]);
 
-  const handleStartQuest = () => {
+  const handleCharacterComplete = (data: { name: string; avatar: string; outfit: string }) => {
+    playEffect('complete');
+    setState(prev => ({
+      ...prev,
+      hasOnboarded: true,
+      character: {
+        name: data.name,
+        avatar: data.avatar,
+        outfit: data.outfit,
+      },
+    }));
+    speak(`Welcome, ${data.name}! Your adventure begins!`);
+  };
+
+  const handleStartQuest = (questType: 'sound' | 'word') => {
     playEffect('tap');
-    setView('quest');
+    setView(questType === 'sound' ? 'quest' : 'wordBuilder');
   };
 
   const handleQuestComplete = (results: any) => {
@@ -110,41 +127,9 @@ const LexiaHome: React.FC = () => {
     setView('quest');
   };
 
-  // Onboarding
+  // Character Creation
   if (!state.hasOnboarded) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <motion.div
-          className="text-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <span className="text-8xl mb-6 block">🏰</span>
-          <h1 className="text-4xl font-black text-foreground mb-2">
-            Welcome to Lexia!
-          </h1>
-          <p className="text-lg text-muted-foreground mb-8">
-            The Enchanted Word Kingdom awaits you
-          </p>
-
-          <Whisper 
-            message="Hi! I'm Whisper. I'll be your guide on this adventure!"
-            variant="celebrate"
-          />
-
-          <button
-            onClick={() => {
-              setState(prev => ({ ...prev, hasOnboarded: true }));
-              playEffect('complete');
-              speak("Let's begin your adventure!");
-            }}
-            className="mt-8 px-8 py-4 bg-primary text-primary-foreground rounded-2xl text-xl font-bold shadow-lg active:scale-95 transition-transform"
-          >
-            Start Adventure! 🚀
-          </button>
-        </motion.div>
-      </div>
-    );
+    return <CharacterCreation onComplete={handleCharacterComplete} />;
   }
 
   // Victory Screen
@@ -160,10 +145,22 @@ const LexiaHome: React.FC = () => {
     );
   }
 
-  // Quest View
+  // Quest View - Sound Match
   if (view === 'quest') {
     return (
       <SoundMatchGame
+        wilsonStep={state.progress.wilsonStep}
+        questionsCount={5}
+        onComplete={handleQuestComplete}
+        onBack={() => setView('home')}
+      />
+    );
+  }
+
+  // Quest View - Word Builder
+  if (view === 'wordBuilder') {
+    return (
+      <WordBuilderGame
         wilsonStep={state.progress.wilsonStep}
         questionsCount={5}
         onComplete={handleQuestComplete}
@@ -271,18 +268,28 @@ const LexiaHome: React.FC = () => {
             </div>
           </div>
 
-          <button
-            onClick={handleStartQuest}
-            className="w-full h-16 bg-primary text-primary-foreground rounded-2xl text-lg font-bold shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-transform"
-          >
-            <span className="text-2xl">⚔️</span>
-            Start Quest!
-          </button>
+          {/* Quest Buttons */}
+          <div className="space-y-3">
+            <button
+              onClick={() => handleStartQuest('sound')}
+              className="w-full h-16 bg-primary text-primary-foreground rounded-2xl text-lg font-bold shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-transform"
+            >
+              <span className="text-2xl">🔊</span>
+              Sound Match Quest
+            </button>
+            <button
+              onClick={() => handleStartQuest('word')}
+              className="w-full h-16 bg-consonant text-consonant-text rounded-2xl text-lg font-bold shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-transform border-2 border-consonant-border"
+            >
+              <span className="text-2xl">🔤</span>
+              Word Builder Quest
+            </button>
+          </div>
         </motion.div>
 
         {/* Whisper */}
         <Whisper
-          message="Tap 'Start Quest' to begin your adventure!"
+          message="Choose a quest to practice your skills!"
           variant="idle"
         />
       </main>
@@ -291,14 +298,14 @@ const LexiaHome: React.FC = () => {
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t-2 border-border px-6 py-4 flex justify-around">
         <button
           onClick={() => setView('home')}
-          className={`flex flex-col items-center gap-1 ${view === 'home' ? 'text-primary' : 'text-muted-foreground'}`}
+          className="flex flex-col items-center gap-1 text-primary"
         >
           <Award size={24} />
           <span className="text-xs font-bold">Quests</span>
         </button>
         <button
           onClick={() => setView('map')}
-          className={`flex flex-col items-center gap-1 ${view === 'map' ? 'text-primary' : 'text-muted-foreground'}`}
+          className="flex flex-col items-center gap-1 text-muted-foreground"
         >
           <Map size={24} />
           <span className="text-xs font-bold">Map</span>
