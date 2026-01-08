@@ -1,10 +1,12 @@
 import React from 'react';
 import { X, GraduationCap, CheckCircle, Lock, Zap, Flame } from 'lucide-react';
 import { LexiPet } from './LexiPet';
+import { TutorNotes } from './TutorNotes';
 import { CURRICULUM } from '@/lib/curriculum';
 
 interface StudentData {
   name: string;
+  avatar: string;
   step: string;
   level: number;
   xp: number;
@@ -13,15 +15,21 @@ interface StudentData {
 interface TutorPortalProps {
   student: StudentData;
   streak: number;
+  notes: Record<string, string>;
   onClose: () => void;
   onStepChange: (stepId: string) => void;
+  onSaveNote: (stepId: string, note: string) => void;
+  onDeleteNote: (stepId: string) => void;
 }
 
 export const TutorPortal: React.FC<TutorPortalProps> = ({
   student,
   streak,
+  notes,
   onClose,
-  onStepChange
+  onStepChange,
+  onSaveNote,
+  onDeleteNote,
 }) => {
   const stepOneSubsteps = Object.values(CURRICULUM["1"].substeps);
 
@@ -45,7 +53,9 @@ export const TutorPortal: React.FC<TutorPortalProps> = ({
       <div className="space-y-6 max-w-2xl mx-auto">
         {/* Student Summary Card */}
         <div className="tutor-card p-6 flex items-center gap-6">
-          <LexiPet level={student.level} size="lg" />
+          <div className="w-20 h-20 bg-card/10 rounded-2xl flex items-center justify-center text-5xl border-2 border-accent/20 animate-bounce-slow">
+            {student.avatar || '🦊'}
+          </div>
           <div className="flex-1">
             <div className="text-2xl font-bold">{student.name}</div>
             <div className="text-muted-foreground font-mono text-sm">
@@ -63,6 +73,14 @@ export const TutorPortal: React.FC<TutorPortalProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Tutor Notes Panel */}
+        <TutorNotes
+          notes={notes}
+          currentStep={student.step}
+          onSave={onSaveNote}
+          onDelete={onDeleteNote}
+        />
 
         {/* Curriculum Assignment */}
         <div className="tutor-card p-6">
@@ -85,6 +103,7 @@ export const TutorPortal: React.FC<TutorPortalProps> = ({
                   <div className="font-bold text-sm md:text-base">{sub.title}</div>
                   <div className="text-xs opacity-60">
                     {sub.words.length} Words • {sub.sentences.length} Sentences
+                    {notes[sub.id] && <span className="ml-2 text-accent">📝</span>}
                   </div>
                 </div>
                 {student.step === sub.id && (
