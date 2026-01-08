@@ -34,6 +34,7 @@ import { SettingsPanel, SoundSettings, AccessibilitySettings as SettingsAccessib
 import { FocusModeView } from '@/components/game/FocusModeView';
 import { DailyLoginRewards, LoginRewardsState } from '@/components/game/DailyLoginRewards';
 import { PhonemeDrillGame } from '@/components/game/PhonemeDrillGame';
+import { BlendingGame } from '@/components/game/BlendingGame';
 
 interface LexiaGameState {
   hasOnboarded: boolean;
@@ -125,8 +126,8 @@ const DEFAULT_STATE: LexiaGameState = {
   },
 };
 
-type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'rhymeHunt' | 'memoryMatch' | 'syllableSort' | 'spelling' | 'vocabulary' | 'phonemeDrill' | 'victory' | 'profile' | 'settings' | 'parent' | 'trophies';
-type QuestType = 'sound' | 'word' | 'rhyme' | 'memory' | 'syllable' | 'spelling' | 'vocabulary' | 'phoneme';
+type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'rhymeHunt' | 'memoryMatch' | 'syllableSort' | 'spelling' | 'vocabulary' | 'phonemeDrill' | 'blending' | 'victory' | 'profile' | 'settings' | 'parent' | 'trophies';
+type QuestType = 'sound' | 'word' | 'rhyme' | 'memory' | 'syllable' | 'spelling' | 'vocabulary' | 'phoneme' | 'blending';
 
 const LexiaHome: React.FC = () => {
   const [state, setState] = useStickyState<LexiaGameState>(DEFAULT_STATE, 'lexia_world_v4');
@@ -314,6 +315,7 @@ const LexiaHome: React.FC = () => {
       spelling: 'spelling',
       vocabulary: 'vocabulary',
       phoneme: 'phonemeDrill',
+      blending: 'blending',
     };
     
     setView(viewMap[questType]);
@@ -647,6 +649,17 @@ const LexiaHome: React.FC = () => {
     );
   }
 
+  if (view === 'blending') {
+    return (
+      <BlendingGame
+        wilsonStep={state.progress.wilsonStep}
+        questionsCount={5}
+        onComplete={handleQuestComplete}
+        onBack={() => setView('home')}
+      />
+    );
+  }
+
   if (view === 'map') {
     return (
       <div className="min-h-screen bg-background p-4 pb-32 safe-area-inset">
@@ -929,6 +942,16 @@ const LexiaHome: React.FC = () => {
               <span className="text-[10px] opacity-80">Learn letter sounds first!</span>
             </button>
             <button
+              onClick={() => handleStartQuest('blending')}
+              className="min-h-[80px] bg-gradient-to-br from-accent to-primary text-accent-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform col-span-2"
+              aria-label="Start Sound Blending"
+              role="button"
+            >
+              <span className="text-2xl" aria-hidden="true">🔗</span>
+              <span className="text-sm">Sound Blending</span>
+              <span className="text-[10px] opacity-80">Combine sounds into words!</span>
+            </button>
+            <button
               onClick={() => handleStartQuest('sound')}
               className="min-h-[80px] bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
               aria-label="Start Sound Match quest"
@@ -1076,6 +1099,7 @@ function getQuestName(type: QuestType): string {
     spelling: 'Spelling Challenge',
     vocabulary: 'Word Meanings Quiz',
     phoneme: 'Phoneme Practice Drill',
+    blending: 'Sound Blending Adventure',
   };
   return names[type];
 }
