@@ -221,6 +221,89 @@ export type Database = {
           },
         ]
       }
+      parent_email_preferences: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          last_report_sent_at: string | null
+          parent_user_id: string
+          updated_at: string | null
+          weekly_reports_enabled: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          last_report_sent_at?: string | null
+          parent_user_id: string
+          updated_at?: string | null
+          weekly_reports_enabled?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          last_report_sent_at?: string | null
+          parent_user_id?: string
+          updated_at?: string | null
+          weekly_reports_enabled?: boolean | null
+        }
+        Relationships: []
+      }
+      parent_reward_goals: {
+        Row: {
+          claimed_at: string | null
+          completed_at: string | null
+          created_at: string | null
+          description: string | null
+          goal_type: string
+          id: string
+          is_claimed: boolean | null
+          parent_user_id: string
+          reward_description: string
+          student_id: string
+          target_value: number
+          title: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          goal_type?: string
+          id?: string
+          is_claimed?: boolean | null
+          parent_user_id: string
+          reward_description: string
+          student_id: string
+          target_value: number
+          title: string
+        }
+        Update: {
+          claimed_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          goal_type?: string
+          id?: string
+          is_claimed?: boolean | null
+          parent_user_id?: string
+          reward_description?: string
+          student_id?: string
+          target_value?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_reward_goals_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       phoneme_performance: {
         Row: {
           correct_count: number
