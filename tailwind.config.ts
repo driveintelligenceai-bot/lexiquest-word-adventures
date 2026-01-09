@@ -110,6 +110,22 @@ export default {
           "0%": { transform: "translateY(20px)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
         },
+        "pulse-soft": {
+          "0%, 100%": { transform: "scale(1)", opacity: "1" },
+          "50%": { transform: "scale(1.02)", opacity: "0.9" },
+        },
+        "bounce-gentle": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-4px)" },
+        },
+        "shimmer": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
+        "glow": {
+          "0%, 100%": { boxShadow: "0 0 8px hsl(var(--primary) / 0.4)" },
+          "50%": { boxShadow: "0 0 20px hsl(var(--primary) / 0.6)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -117,6 +133,15 @@ export default {
         "fade-in": "fade-in 0.4s ease-out",
         "zoom-in": "zoom-in 0.3s ease-out",
         "slide-up": "slide-up 0.5s ease-out",
+        "pulse-soft": "pulse-soft 2s ease-in-out infinite",
+        "bounce-gentle": "bounce-gentle 1.5s ease-in-out infinite",
+        "shimmer": "shimmer 2s linear infinite",
+        "glow": "glow 2s ease-in-out infinite",
+      },
+      boxShadow: {
+        "game-card": "0 4px 20px -4px hsl(var(--primary) / 0.15), 0 0 0 1px hsl(var(--border))",
+        "game-button": "0 6px 0 hsl(var(--primary) / 0.3), 0 4px 12px hsl(var(--primary) / 0.2)",
+        "game-button-pressed": "0 2px 0 hsl(var(--primary) / 0.3)",
       },
     },
   },

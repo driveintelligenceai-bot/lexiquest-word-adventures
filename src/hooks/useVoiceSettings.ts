@@ -115,9 +115,15 @@ export function useVoiceSettings() {
       window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = overrideRate ?? settings.rate;
-      utterance.pitch = settings.pitch;
-      utterance.volume = settings.volume;
+      
+      // Guard against non-finite values that crash SpeechSynthesisUtterance
+      const safeRate = overrideRate ?? settings.rate;
+      const safePitch = settings.pitch;
+      const safeVolume = settings.volume;
+      
+      utterance.rate = Number.isFinite(safeRate) ? Math.max(0.1, Math.min(10, safeRate)) : 0.9;
+      utterance.pitch = Number.isFinite(safePitch) ? Math.max(0, Math.min(2, safePitch)) : 1.0;
+      utterance.volume = Number.isFinite(safeVolume) ? Math.max(0, Math.min(1, safeVolume)) : 1.0;
 
       if (selectedVoice) {
         utterance.voice = selectedVoice;
@@ -150,8 +156,9 @@ export function useVoiceSettings() {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance("Hello! I'm your reading friend!");
     utterance.voice = voice;
-    utterance.rate = settings.rate;
-    utterance.pitch = settings.pitch;
+    // Guard against non-finite values
+    utterance.rate = Number.isFinite(settings.rate) ? Math.max(0.1, Math.min(10, settings.rate)) : 0.9;
+    utterance.pitch = Number.isFinite(settings.pitch) ? Math.max(0, Math.min(2, settings.pitch)) : 1.0;
     window.speechSynthesis.speak(utterance);
   }, [settings.rate, settings.pitch]);
 

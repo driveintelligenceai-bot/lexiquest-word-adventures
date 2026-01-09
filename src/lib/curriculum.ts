@@ -1,8 +1,18 @@
-// Wilson Reading System Curriculum Database
-// Steps 1-12 Architecture with Step 1 fully implemented
+/**
+ * Wilson Reading System Curriculum Database
+ * 
+ * This is the core educational data structure for Dyslexio Adventures.
+ * Steps 1-12 follow the Wilson Reading System progression.
+ * 
+ * Educational Notes:
+ * - Step 1 focuses on Closed Syllables (CVC words)
+ * - Word selection avoids welded sounds (am, an) until Step 1.5
+ * - All words are phonetically decodable at their respective levels
+ * - Sentences use only words from current or previous substeps
+ */
 
 export interface Tile {
-  c: string; // character
+  c: string; // character or grapheme
   t: 'c' | 'v' | 'd' | 'w' | 'b' | 's'; // consonant, vowel, digraph, welded, bonus, suffix
 }
 
@@ -111,20 +121,51 @@ export const CURRICULUM: CurriculumType = {
   "12": { id: "12", title: "Advanced Concepts", color: "bg-slate-600", substeps: {} }
 };
 
-// Get tile style class based on type
+/**
+ * Returns the appropriate CSS class for a tile based on its type.
+ * Used for Wilson color-coding: consonants=blue, vowels=red, etc.
+ */
 export const getTileStyle = (type: Tile['t']): string => {
   const styles: Record<Tile['t'], string> = {
     c: 'tile-consonant',
     v: 'tile-vowel',
     d: 'tile-digraph',
     w: 'tile-welded',
-    b: 'tile-consonant', // Bonus uses consonant style with star
+    b: 'tile-consonant', // Bonus letters use consonant style with visual marker
     s: 'tile-suffix'
   };
   return styles[type] || styles.c;
 };
 
-// Check if character is a vowel
+/**
+ * Checks if a character is a vowel.
+ * Used for phoneme identification and color-coding.
+ */
 export const isVowel = (char: string): boolean => {
   return ['a', 'e', 'i', 'o', 'u'].includes(char.toLowerCase());
+};
+
+/**
+ * Safely retrieves words for a given Wilson step and substep.
+ * Returns fallback words if the requested step doesn't exist.
+ */
+export const getWordsForStep = (step: number, substep: string): string[] => {
+  const stepData = CURRICULUM[String(step)];
+  if (!stepData || !stepData.substeps[substep]) {
+    // Fallback to Step 1.1 words if requested step doesn't exist
+    return CURRICULUM["1"].substeps["1.1"]?.words || [];
+  }
+  return stepData.substeps[substep].words;
+};
+
+/**
+ * Safely retrieves tiles for a given Wilson step and substep.
+ * Returns fallback tiles if the requested step doesn't exist.
+ */
+export const getTilesForStep = (step: number, substep: string): Tile[] => {
+  const stepData = CURRICULUM[String(step)];
+  if (!stepData || !stepData.substeps[substep]) {
+    return CURRICULUM["1"].substeps["1.1"]?.tiles || [];
+  }
+  return stepData.substeps[substep].tiles;
 };
