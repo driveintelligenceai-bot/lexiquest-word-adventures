@@ -8,15 +8,26 @@ import { Whisper } from './Whisper';
 import { Button } from '@/components/ui/button';
 
 /**
- * WordWallGame - Wilson Reading System Aligned Word Wall
+ * WordWallGame - Wilson Reading System Core Learning Module
  * 
- * Features:
- * - Wilson substep locking (only shows words from current step)
- * - Audio-on-tap for every word
- * - Keyword images with emoji anchors
- * - "Falling words" that return with hints if missed
- * - 95% mastery tracking before advancing
- * - Adaptive difficulty based on performance
+ * This is the PRIMARY educational component of the app. The Word Wall is
+ * central to Wilson methodology - it's not just a game, it's the foundation
+ * of reading mastery for dyslexic learners.
+ * 
+ * Educational Features:
+ * - Wilson substep locking (only shows words from current curriculum step)
+ * - Audio-on-tap for every word (multi-sensory: visual + auditory)
+ * - Keyword images with emoji anchors (memory association)
+ * - Color-coded phonemes (consonants blue, vowels red - Wilson standard)
+ * - "Falling words" that return with progressive hints if missed
+ * - 95% mastery tracking before advancing (evidence-based threshold)
+ * - Spaced repetition through retry mechanism
+ * - Multi-sensory engagement: see → hear → type → verify
+ * 
+ * Wilson Reading System Integration:
+ * - Words are sourced from CURRICULUM data matching Wilson steps
+ * - Phoneme breakdown follows Wilson color-coding standards
+ * - Mastery requirements align with Wilson progression model
  */
 
 interface WordWallGameProps {
@@ -359,22 +370,47 @@ export const WordWallGame: React.FC<WordWallGameProps> = ({
               exit={{ opacity: 0, y: -20 }}
               className="flex-1 flex flex-col items-center justify-center text-center space-y-6"
             >
-              <div className="text-6xl">🧱</div>
-              <h2 className="text-2xl font-bold text-foreground">Word Wall</h2>
-              <p className="text-muted-foreground max-w-xs">
-                Study the words on the wall, then test how many you remember!
-              </p>
-              <div className="bg-card border-2 border-border rounded-2xl p-4 max-w-xs">
-                <div className="flex items-center gap-3 mb-2">
-                  <Zap className="text-accent" size={20} />
-                  <span className="font-bold text-sm">Wilson Step {wilsonStep}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {wordCards.length} words to master • Tap to hear • 95% to advance
-                </p>
+              <motion.div 
+                className="text-6xl"
+                animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
+                transition={{ repeat: Infinity, duration: 3 }}
+              >
+                📚
+              </motion.div>
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">Word Wall</h2>
+                <p className="text-xs text-primary font-bold uppercase mt-1">Core Learning Module</p>
               </div>
-              <Button size="lg" onClick={handleStartStudy} className="text-lg px-8 py-6">
-                Start Studying! 📖
+              <p className="text-muted-foreground max-w-xs">
+                Master these words with the Wilson method: <strong>See</strong> the word, <strong>Hear</strong> the sounds, <strong>Type</strong> it from memory!
+              </p>
+              <div className="bg-card border-2 border-primary/30 rounded-2xl p-4 max-w-xs shadow-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Zap className="text-primary" size={20} />
+                  </div>
+                  <div className="text-left">
+                    <span className="font-bold text-sm block">Wilson Step {wilsonStep}</span>
+                    <span className="text-xs text-muted-foreground">Substep {wilsonSubstep}</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-muted rounded-xl p-2">
+                    <div className="text-lg font-bold text-foreground">{wordCards.length}</div>
+                    <div className="text-[10px] text-muted-foreground">Words</div>
+                  </div>
+                  <div className="bg-muted rounded-xl p-2">
+                    <div className="text-lg font-bold text-primary">95%</div>
+                    <div className="text-[10px] text-muted-foreground">To Pass</div>
+                  </div>
+                  <div className="bg-muted rounded-xl p-2">
+                    <div className="text-lg font-bold text-accent">∞</div>
+                    <div className="text-[10px] text-muted-foreground">Retries</div>
+                  </div>
+                </div>
+              </div>
+              <Button size="lg" onClick={handleStartStudy} className="text-lg px-8 py-6 bg-primary hover:bg-primary/90">
+                Begin Learning 📖
               </Button>
             </motion.div>
           )}
