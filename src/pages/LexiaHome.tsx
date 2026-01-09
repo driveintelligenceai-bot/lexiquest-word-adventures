@@ -38,6 +38,7 @@ import { PhonemeDrillGame } from '@/components/game/PhonemeDrillGame';
 import { BlendingGame } from '@/components/game/BlendingGame';
 import { WordWallGame } from '@/components/game/WordWallGame';
 import { SessionBreakReminder } from '@/components/game/SessionBreakReminder';
+import { LevelUpCelebration } from '@/components/game/RegionUnlockCelebration';
 
 interface LexiaGameState {
   hasOnboarded: boolean;
@@ -157,6 +158,8 @@ const LexiaHome: React.FC = () => {
   const [showLoginRewards, setShowLoginRewards] = useState(false);
   const [showBreakReminder, setShowBreakReminder] = useState(false);
   const [breakReminderType, setBreakReminderType] = useState<'warning' | 'limit'>('warning');
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [levelUpData, setLevelUpData] = useState<{ level: number; xp: number; unlockedRegion?: { name: string; icon: string } | null }>({ level: 1, xp: 0 });
   const { speak, settings: voiceSettings, updateSettings: updateVoiceSettings } = useVoiceSettings();
   
   // Session Timer - Evidence-based 15-20 minute optimal duration
@@ -397,6 +400,19 @@ const LexiaHome: React.FC = () => {
 
     if (leveledUp) {
       playEffect('levelUp');
+      
+      // Check if new region unlocked
+      const regions = Object.values(STORY_REGIONS);
+      const unlockedRegion = regions.find(
+        r => r.unlockLevel === newLevel
+      );
+      
+      setLevelUpData({
+        level: newLevel,
+        xp: xpEarned,
+        unlockedRegion: unlockedRegion ? { name: unlockedRegion.name, icon: unlockedRegion.icon } : null,
+      });
+      setShowLevelUp(true);
     }
 
     // Show treasure if found
@@ -887,6 +903,16 @@ const LexiaHome: React.FC = () => {
           speakIfEnabled("Great job taking a break! Your brain will remember better!");
         }}
         onDismiss={() => setShowBreakReminder(false)}
+      />
+
+      {/* Level Up Celebration */}
+      <LevelUpCelebration
+        isVisible={showLevelUp}
+        newLevel={levelUpData.level}
+        xpEarned={levelUpData.xp}
+        unlockedRegion={levelUpData.unlockedRegion}
+        onClose={() => setShowLevelUp(false)}
+        onSpeak={speakIfEnabled}
       />
 
       {/* Streak Milestone Toast */}

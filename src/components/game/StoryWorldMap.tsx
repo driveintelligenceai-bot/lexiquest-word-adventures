@@ -1,7 +1,8 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Volume2, MapPin, Lock, Star, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Volume2, MapPin, Lock, Star, Sparkles, Unlock } from 'lucide-react';
 import { StoryRegion, STORY_REGIONS } from '@/lib/storyData';
+import { RegionUnlockCelebration } from './RegionUnlockCelebration';
 
 interface StoryWorldMapProps {
   currentRegion: string;
@@ -19,10 +20,32 @@ export const StoryWorldMap: React.FC<StoryWorldMapProps> = ({
   onSpeak,
 }) => {
   const regions = Object.values(STORY_REGIONS);
+  const prevLevelRef = useRef(currentLevel);
+  const [newlyUnlockedRegion, setNewlyUnlockedRegion] = useState<StoryRegion | null>(null);
+  const [showUnlockCelebration, setShowUnlockCelebration] = useState(false);
+  const [justUnlockedIds, setJustUnlockedIds] = useState<string[]>([]);
+
+  // Detect newly unlocked regions when level changes
+  useEffect(() => {
+    if (currentLevel > prevLevelRef.current) {
+      const newlyUnlocked = regions.filter(
+        region => region.unlockLevel <= currentLevel && region.unlockLevel > prevLevelRef.current
+      );
+      
+      if (newlyUnlocked.length > 0) {
+        setJustUnlockedIds(newlyUnlocked.map(r => r.id));
+        setNewlyUnlockedRegion(newlyUnlocked[0]);
+        setShowUnlockCelebration(true);
+      }
+      
+      prevLevelRef.current = currentLevel;
+    }
+  }, [currentLevel, regions]);
 
   const isUnlocked = (region: StoryRegion) => currentLevel >= region.unlockLevel;
   const isCompleted = (region: StoryRegion) => completedRegions.includes(region.id);
   const isCurrent = (region: StoryRegion) => region.id === currentRegion;
+  const isJustUnlocked = (region: StoryRegion) => justUnlockedIds.includes(region.id);
 
   const handleRegionClick = (region: StoryRegion) => {
     if (isUnlocked(region)) {
@@ -33,8 +56,29 @@ export const StoryWorldMap: React.FC<StoryWorldMapProps> = ({
     }
   };
 
+  const handleCelebrationClose = () => {
+    setShowUnlockCelebration(false);
+    // Clear just-unlocked after animation completes
+    setTimeout(() => setJustUnlockedIds([]), 1000);
+  };
+
   return (
-    <div className="relative min-h-[500px] bg-gradient-to-b from-sky-200 via-green-100 to-amber-100 rounded-3xl p-6 overflow-hidden">
+    <>
+      {/* Region Unlock Celebration */}
+      {newlyUnlockedRegion && (
+        <RegionUnlockCelebration
+          isVisible={showUnlockCelebration}
+          regionName={newlyUnlockedRegion.name}
+          regionIcon={newlyUnlockedRegion.icon}
+          regionDescription={newlyUnlockedRegion.description}
+          npcName={newlyUnlockedRegion.npc.name}
+          npcEmoji={newlyUnlockedRegion.npc.emoji}
+          onClose={handleCelebrationClose}
+          onSpeak={onSpeak}
+        />
+      )}
+
+      <div className="relative min-h-[500px] bg-gradient-to-b from-sky-200 via-green-100 to-amber-100 rounded-3xl p-6 overflow-hidden">
       {/* Decorative background elements */}
       <div className="absolute inset-0 pointer-events-none">
         {/* Clouds */}
@@ -94,6 +138,7 @@ export const StoryWorldMap: React.FC<StoryWorldMapProps> = ({
           const unlocked = isUnlocked(region);
           const completed = isCompleted(region);
           const current = isCurrent(region);
+          const justUnlocked = isJustUnlocked(region);
 
           // Position regions in a winding path
           const isLeft = index % 2 === 0;
@@ -105,19 +150,69 @@ export const StoryWorldMap: React.FC<StoryWorldMapProps> = ({
               className={`relative w-full flex items-center gap-4 p-4 rounded-2xl border-4 transition-all ${
                 isLeft ? 'flex-row' : 'flex-row-reverse'
               } ${
-                current
-                  ? 'bg-primary/20 border-primary shadow-lg scale-105'
-                  : completed
-                    ? 'bg-welded/30 border-welded-border'
-                    : unlocked
-                      ? 'bg-card border-border hover:border-primary/50'
-                      : 'bg-muted/50 border-border/50 opacity-60'
+                justUnlocked
+                  ? 'bg-accent/30 border-accent shadow-xl'
+                  : current
+                    ? 'bg-primary/20 border-primary shadow-lg scale-105'
+                    : completed
+                      ? 'bg-welded/30 border-welded-border'
+                      : unlocked
+                        ? 'bg-card border-border hover:border-primary/50'
+                        : 'bg-muted/50 border-border/50 opacity-60'
               }`}
               initial={{ opacity: 0, x: isLeft ? -50 : 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.15 }}
+              animate={{ 
+                opacity: 1, 
+                x: 0,
+                scale: justUnlocked ? [1, 1.05, 1] : 1,
+              }}
+              transition={{ 
+                delay: index * 0.15,
+                scale: { duration: 0.5, repeat: justUnlocked ? Infinity : 0, repeatDelay: 0.5 },
+              }}
               whileTap={unlocked ? { scale: 0.98 } : {}}
             >
+              {/* Just unlocked glow effect */}
+              {justUnlocked && (
+                <motion.div
+                  className="absolute inset-0 rounded-2xl bg-gradient-to-r from-accent/40 via-primary/40 to-accent/40"
+                  animate={{ 
+                    opacity: [0.5, 1, 0.5],
+                  }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+              )}
+              
+              {/* Unlock burst animation */}
+              <AnimatePresence>
+                {justUnlocked && (
+                  <motion.div
+                    className="absolute inset-0 pointer-events-none"
+                    initial={{ opacity: 1 }}
+                    animate={{ opacity: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 2 }}
+                  >
+                    {[...Array(8)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        className="absolute left-1/2 top-1/2 text-xl"
+                        initial={{ x: 0, y: 0, scale: 0 }}
+                        animate={{
+                          x: Math.cos(i * 45 * Math.PI / 180) * 80,
+                          y: Math.sin(i * 45 * Math.PI / 180) * 80,
+                          scale: [0, 1.5, 0],
+                          opacity: [1, 1, 0],
+                        }}
+                        transition={{ duration: 1, delay: 0.1 * i }}
+                      >
+                        ✨
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Region Icon */}
               <motion.div
                 className={`relative w-20 h-20 rounded-2xl flex items-center justify-center text-5xl ${
@@ -223,5 +318,6 @@ export const StoryWorldMap: React.FC<StoryWorldMapProps> = ({
         </span>
       </div>
     </div>
+    </>
   );
 };
