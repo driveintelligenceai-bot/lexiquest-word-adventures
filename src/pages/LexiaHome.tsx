@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Flame, Trophy, Settings, Volume2, Map, User, Award, Users, VolumeX, Music, ShoppingBag, Gift } from 'lucide-react';
+import { Flame, Trophy, Settings, Volume2, Map, User, Award, Users, VolumeX, Music, ShoppingBag, Gift, Focus, Clock } from 'lucide-react';
 import { useStickyState } from '@/hooks/useStickyState';
 import { useVoiceSettings } from '@/hooks/useVoiceSettings';
+import { useSessionTimer } from '@/hooks/useSessionTimer';
 import { applyLexiaTheme } from '@/lib/lexiaTheme';
 import { calculateStreak, getTodayStr, getStreakMilestoneMessage, getStreakXpBonus } from '@/lib/streakUtils';
 import { STORY_REGIONS, getRandomTreasure, TreasureReward, getJumbleMonster } from '@/lib/storyData';
@@ -35,6 +36,8 @@ import { FocusModeView } from '@/components/game/FocusModeView';
 import { DailyLoginRewards, LoginRewardsState } from '@/components/game/DailyLoginRewards';
 import { PhonemeDrillGame } from '@/components/game/PhonemeDrillGame';
 import { BlendingGame } from '@/components/game/BlendingGame';
+import { WordWallGame } from '@/components/game/WordWallGame';
+import { SessionBreakReminder } from '@/components/game/SessionBreakReminder';
 
 interface LexiaGameState {
   hasOnboarded: boolean;
@@ -53,6 +56,7 @@ interface LexiaGameState {
     lastActiveDate: string;
     longestStreak: number;
     treasuresFound: number;
+    wordWallMastery: Record<string, number>; // Track mastery per substep
   };
   settings: {
     theme: string;
@@ -70,6 +74,10 @@ interface LexiaGameState {
     highContrast: boolean;
     speechRate: number;
     focusMode: boolean;
+    // Session settings
+    sessionTimerEnabled: boolean;
+    sessionWarningMinutes: number;
+    sessionLimitMinutes: number;
   };
   ownedItems: string[];
   completedQuests: string[];
@@ -93,6 +101,7 @@ const DEFAULT_STATE: LexiaGameState = {
     lastActiveDate: '',
     longestStreak: 0,
     treasuresFound: 0,
+    wordWallMastery: {},
   },
   settings: {
     theme: 'default',
@@ -110,6 +119,10 @@ const DEFAULT_STATE: LexiaGameState = {
     highContrast: false,
     speechRate: 0.85,
     focusMode: false,
+    // Session settings
+    sessionTimerEnabled: true,
+    sessionWarningMinutes: 15,
+    sessionLimitMinutes: 20,
   },
   ownedItems: [],
   completedQuests: [],
@@ -126,8 +139,8 @@ const DEFAULT_STATE: LexiaGameState = {
   },
 };
 
-type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'rhymeHunt' | 'memoryMatch' | 'syllableSort' | 'spelling' | 'vocabulary' | 'phonemeDrill' | 'blending' | 'victory' | 'profile' | 'settings' | 'parent' | 'trophies';
-type QuestType = 'sound' | 'word' | 'rhyme' | 'memory' | 'syllable' | 'spelling' | 'vocabulary' | 'phoneme' | 'blending';
+type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'rhymeHunt' | 'memoryMatch' | 'syllableSort' | 'spelling' | 'vocabulary' | 'phonemeDrill' | 'blending' | 'wordWall' | 'victory' | 'profile' | 'settings' | 'parent' | 'trophies';
+type QuestType = 'sound' | 'word' | 'rhyme' | 'memory' | 'syllable' | 'spelling' | 'vocabulary' | 'phoneme' | 'blending' | 'wordWall';
 
 const LexiaHome: React.FC = () => {
   const [state, setState] = useStickyState<LexiaGameState>(DEFAULT_STATE, 'lexia_world_v4');
@@ -142,7 +155,28 @@ const LexiaHome: React.FC = () => {
   const [showStore, setShowStore] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showLoginRewards, setShowLoginRewards] = useState(false);
+  const [showBreakReminder, setShowBreakReminder] = useState(false);
+  const [breakReminderType, setBreakReminderType] = useState<'warning' | 'limit'>('warning');
   const { speak, settings: voiceSettings, updateSettings: updateVoiceSettings } = useVoiceSettings();
+  
+  // Session Timer - Evidence-based 15-20 minute optimal duration
+  const sessionTimer = useSessionTimer({
+    warningMinutes: state.settings.sessionWarningMinutes || 15,
+    limitMinutes: state.settings.sessionLimitMinutes || 20,
+    autoStart: state.settings.sessionTimerEnabled !== false,
+    onWarning: () => {
+      if (state.settings.sessionTimerEnabled) {
+        setBreakReminderType('warning');
+        setShowBreakReminder(true);
+      }
+    },
+    onLimit: () => {
+      if (state.settings.sessionTimerEnabled) {
+        setBreakReminderType('limit');
+        setShowBreakReminder(true);
+      }
+    },
+  });
   
   const currentRegion = STORY_REGIONS[state.progress.currentRegion] || STORY_REGIONS.phoneme_forest;
   const dailyQuests = generateDailyQuests(
@@ -316,6 +350,7 @@ const LexiaHome: React.FC = () => {
       vocabulary: 'vocabulary',
       phoneme: 'phonemeDrill',
       blending: 'blending',
+      wordWall: 'wordWall',
     };
     
     setView(viewMap[questType]);
@@ -660,6 +695,31 @@ const LexiaHome: React.FC = () => {
     );
   }
 
+  if (view === 'wordWall') {
+    return (
+      <WordWallGame
+        wilsonStep={state.progress.wilsonStep}
+        wilsonSubstep="1.1"
+        questionsCount={8}
+        onComplete={(results) => {
+          // Track word wall mastery
+          setState(prev => ({
+            ...prev,
+            progress: {
+              ...prev.progress,
+              wordWallMastery: {
+                ...prev.progress.wordWallMastery,
+                '1.1': results.masteryPercent,
+              },
+            },
+          }));
+          handleQuestComplete(results);
+        }}
+        onBack={() => setView('home')}
+      />
+    );
+  }
+
   if (view === 'map') {
     return (
       <div className="min-h-screen bg-background p-4 pb-32 safe-area-inset">
@@ -808,6 +868,27 @@ const LexiaHome: React.FC = () => {
         />
       )}
 
+      {/* Session Break Reminder */}
+      <SessionBreakReminder
+        isVisible={showBreakReminder}
+        variant={breakReminderType}
+        sessionTime={sessionTimer.formattedTime}
+        minutesRemaining={sessionTimer.minutesRemaining}
+        onContinue={() => {
+          setShowBreakReminder(false);
+          sessionTimer.dismissWarning();
+          if (breakReminderType === 'limit') {
+            sessionTimer.extendSession(5);
+          }
+        }}
+        onBreak={() => {
+          setShowBreakReminder(false);
+          sessionTimer.pause();
+          speakIfEnabled("Great job taking a break! Your brain will remember better!");
+        }}
+        onDismiss={() => setShowBreakReminder(false)}
+      />
+
       {/* Streak Milestone Toast */}
       {streakMessage && (
         <motion.div
@@ -875,8 +956,18 @@ const LexiaHome: React.FC = () => {
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Stats with Session Timer */}
         <div className="flex gap-3">
+          {/* Session Timer Display */}
+          {state.settings.sessionTimerEnabled && (
+            <div className="flex-1 bg-muted/50 p-3 rounded-2xl flex items-center gap-2 border-2 border-border">
+              <Clock size={18} className="text-muted-foreground" />
+              <div>
+                <div className="text-lg font-black text-foreground">{sessionTimer.formattedTime}</div>
+                <div className="text-[10px] font-bold text-muted-foreground uppercase">Session</div>
+              </div>
+            </div>
+          )}
           <motion.div
             className="flex-1 bg-accent/10 p-3 rounded-2xl flex items-center gap-3 border-2 border-accent/20"
             animate={state.progress.streak > 0 ? { scale: [1, 1.02, 1] } : {}}
@@ -1014,6 +1105,17 @@ const LexiaHome: React.FC = () => {
               <span className="text-2xl" aria-hidden="true">📚</span>
               <span className="text-sm">Word Meanings</span>
             </button>
+            {/* Word Wall - Wilson Mastery Game */}
+            <button
+              onClick={() => handleStartQuest('wordWall')}
+              className="min-h-[80px] bg-gradient-to-br from-welded to-digraph text-welded-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform col-span-2 border-2 border-welded-border"
+              aria-label="Start Word Wall Mastery"
+              role="button"
+            >
+              <span className="text-2xl" aria-hidden="true">🧱</span>
+              <span className="text-sm">Word Wall</span>
+              <span className="text-[10px] opacity-80">Wilson mastery mode!</span>
+            </button>
           </div>
         </motion.div>
 
@@ -1100,6 +1202,7 @@ function getQuestName(type: QuestType): string {
     vocabulary: 'Word Meanings Quiz',
     phoneme: 'Phoneme Practice Drill',
     blending: 'Sound Blending Adventure',
+    wordWall: 'Word Wall Mastery',
   };
   return names[type];
 }
