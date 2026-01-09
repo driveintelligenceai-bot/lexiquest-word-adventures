@@ -1171,12 +1171,12 @@ const LexiaHome: React.FC = () => {
           <span className="text-xs font-bold">Trophies</span>
         </button>
         <button
-          onClick={() => { playEffect('tap'); setView('profile'); }}
-          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${(view as GameView) === 'profile' ? 'text-primary' : 'text-muted-foreground'}`}
-          aria-label="View profile"
+          onClick={() => { playEffect('tap'); setView('map'); }}
+          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${(view as GameView) === 'map' ? 'text-primary' : 'text-muted-foreground'}`}
+          aria-label="Open world map"
         >
-          <User size={22} />
-          <span className="text-xs font-bold">Profile</span>
+          <Map size={22} />
+          <span className="text-xs font-bold">World</span>
         </button>
         <button
           onClick={() => { playEffect('tap'); setView('profile'); }}
