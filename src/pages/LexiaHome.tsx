@@ -39,6 +39,8 @@ import { BlendingGame } from '@/components/game/BlendingGame';
 import { WordWallGame } from '@/components/game/WordWallGame';
 import { SessionBreakReminder } from '@/components/game/SessionBreakReminder';
 import { LevelUpCelebration } from '@/components/game/RegionUnlockCelebration';
+import { LetterFlipGame } from '@/components/game/LetterFlipGame';
+import { DailyLearningPath } from '@/components/game/DailyLearningPath';
 
 interface LexiaGameState {
   hasOnboarded: boolean;
@@ -140,8 +142,8 @@ const DEFAULT_STATE: LexiaGameState = {
   },
 };
 
-type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'rhymeHunt' | 'memoryMatch' | 'syllableSort' | 'spelling' | 'vocabulary' | 'phonemeDrill' | 'blending' | 'wordWall' | 'victory' | 'profile' | 'settings' | 'parent' | 'trophies';
-type QuestType = 'sound' | 'word' | 'rhyme' | 'memory' | 'syllable' | 'spelling' | 'vocabulary' | 'phoneme' | 'blending' | 'wordWall';
+type GameView = 'home' | 'map' | 'quest' | 'wordBuilder' | 'rhymeHunt' | 'memoryMatch' | 'syllableSort' | 'spelling' | 'vocabulary' | 'phonemeDrill' | 'blending' | 'wordWall' | 'letterFlip' | 'victory' | 'profile' | 'settings' | 'parent' | 'trophies';
+type QuestType = 'sound' | 'word' | 'rhyme' | 'memory' | 'syllable' | 'spelling' | 'vocabulary' | 'phoneme' | 'blending' | 'wordWall' | 'letterFlip';
 
 const LexiaHome: React.FC = () => {
   const [state, setState] = useStickyState<LexiaGameState>(DEFAULT_STATE, 'lexia_world_v4');
@@ -160,6 +162,7 @@ const LexiaHome: React.FC = () => {
   const [breakReminderType, setBreakReminderType] = useState<'warning' | 'limit'>('warning');
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [levelUpData, setLevelUpData] = useState<{ level: number; xp: number; unlockedRegion?: { name: string; icon: string } | null }>({ level: 1, xp: 0 });
+  const [showLearningPath, setShowLearningPath] = useState(false);
   const { speak, settings: voiceSettings, updateSettings: updateVoiceSettings } = useVoiceSettings();
   
   // Session Timer - Evidence-based 15-20 minute optimal duration
@@ -354,6 +357,7 @@ const LexiaHome: React.FC = () => {
       phoneme: 'phonemeDrill',
       blending: 'blending',
       wordWall: 'wordWall',
+      letterFlip: 'letterFlip',
     };
     
     setView(viewMap[questType]);
@@ -736,6 +740,16 @@ const LexiaHome: React.FC = () => {
     );
   }
 
+  if (view === 'letterFlip') {
+    return (
+      <LetterFlipGame
+        questionsCount={8}
+        onComplete={handleQuestComplete}
+        onBack={() => setView('home')}
+      />
+    );
+  }
+
   if (view === 'map') {
     return (
       <div className="min-h-screen bg-background p-4 pb-32 safe-area-inset">
@@ -915,6 +929,17 @@ const LexiaHome: React.FC = () => {
         onSpeak={speakIfEnabled}
       />
 
+      {/* Daily Learning Path */}
+      {showLearningPath && (
+        <DailyLearningPath
+          completedToday={state.completedToday}
+          currentWilsonStep={state.progress.wilsonStep}
+          onStartActivity={(type) => handleStartQuest(type as QuestType)}
+          onSpeak={speakIfEnabled}
+          onClose={() => setShowLearningPath(false)}
+        />
+      )}
+
       {/* Streak Milestone Toast */}
       {streakMessage && (
         <motion.div
@@ -1025,6 +1050,31 @@ const LexiaHome: React.FC = () => {
 
       {/* Main Content */}
       <main className="p-6 space-y-6">
+        {/* Daily Learning Path Button */}
+        <motion.button
+          onClick={() => setShowLearningPath(true)}
+          className="w-full bg-gradient-to-r from-accent to-primary text-primary-foreground rounded-2xl p-4 flex items-center justify-between shadow-lg"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <div className="flex items-center gap-3">
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="text-2xl"
+            >
+              🎯
+            </motion.div>
+            <div className="text-left">
+              <div className="font-bold">Today's Learning Path</div>
+              <div className="text-xs opacity-80">
+                {state.completedToday.length}/6 activities • Guided order
+              </div>
+            </div>
+          </div>
+          <div className="text-2xl">→</div>
+        </motion.button>
+
         {/* Current Region */}
         <motion.div
           className="bg-card rounded-3xl p-6 shadow-lg border-2 border-border"
@@ -1143,6 +1193,16 @@ const LexiaHome: React.FC = () => {
             >
               <span className="text-2xl" aria-hidden="true">📖</span>
               <span className="text-sm">Vocabulary</span>
+            </button>
+            <button
+              onClick={() => handleStartQuest('letterFlip')}
+              className="min-h-[80px] bg-accent/20 text-accent rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-accent/30"
+              aria-label="Start Letter Flip - b/d practice"
+              role="button"
+            >
+              <span className="text-2xl" aria-hidden="true">🔄</span>
+              <span className="text-sm">Letter Flip</span>
+              <span className="text-[10px] opacity-70">b/d/p/q</span>
             </button>
           </div>
         </motion.div>
@@ -1273,6 +1333,7 @@ function getQuestName(type: QuestType): string {
     phoneme: 'Phoneme Practice Drill',
     blending: 'Sound Blending Adventure',
     wordWall: 'Word Wall Mastery',
+    letterFlip: 'Letter Flip Challenge',
   };
   return names[type];
 }
