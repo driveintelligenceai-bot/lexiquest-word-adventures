@@ -1045,32 +1045,45 @@ const LexiaHome: React.FC = () => {
             </div>
           </div>
 
-          {/* Quest Buttons Grid */}
+          {/* Quest Buttons Grid - Word Wall FIRST as core learning */}
           <div className="grid grid-cols-2 gap-3">
-            {/* Phoneme Drill - First activity for beginners */}
+            {/* Word Wall - Core Learning Module - Most Prominent */}
+            <motion.button
+              onClick={() => handleStartQuest('wordWall')}
+              className="min-h-[100px] bg-gradient-to-br from-primary via-primary to-accent text-primary-foreground rounded-2xl font-bold shadow-xl flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform col-span-2 border-2 border-primary/50 relative overflow-hidden"
+              aria-label="Start Word Wall - Core Learning"
+              role="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 animate-pulse" />
+              <span className="text-3xl" aria-hidden="true">📚</span>
+              <span className="text-lg font-black">Word Wall</span>
+              <span className="text-xs opacity-90 bg-white/20 px-3 py-0.5 rounded-full">⭐ Core Learning Module</span>
+            </motion.button>
+
+            {/* Phoneme Drill */}
             <button
               onClick={() => handleStartQuest('phoneme')}
-              className="min-h-[80px] bg-gradient-to-br from-primary to-accent text-primary-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform col-span-2"
+              className="min-h-[80px] bg-primary/90 text-primary-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
               aria-label="Start Phoneme Drill"
               role="button"
             >
               <span className="text-2xl" aria-hidden="true">🎯</span>
               <span className="text-sm">Sound Practice</span>
-              <span className="text-[10px] opacity-80">Learn letter sounds first!</span>
             </button>
             <button
               onClick={() => handleStartQuest('blending')}
-              className="min-h-[80px] bg-gradient-to-br from-accent to-primary text-accent-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform col-span-2"
+              className="min-h-[80px] bg-accent text-accent-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
               aria-label="Start Sound Blending"
               role="button"
             >
               <span className="text-2xl" aria-hidden="true">🔗</span>
-              <span className="text-sm">Sound Blending</span>
-              <span className="text-[10px] opacity-80">Combine sounds into words!</span>
+              <span className="text-sm">Blending</span>
             </button>
             <button
               onClick={() => handleStartQuest('sound')}
-              className="min-h-[80px] bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
+              className="min-h-[80px] bg-consonant text-consonant-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-consonant-border"
               aria-label="Start Sound Match quest"
               role="button"
             >
@@ -1079,7 +1092,7 @@ const LexiaHome: React.FC = () => {
             </button>
             <button
               onClick={() => handleStartQuest('word')}
-              className="min-h-[80px] bg-consonant text-consonant-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-consonant-border"
+              className="min-h-[80px] bg-vowel text-vowel-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-vowel-border"
               aria-label="Start Word Builder quest"
               role="button"
             >
@@ -1088,7 +1101,7 @@ const LexiaHome: React.FC = () => {
             </button>
             <button
               onClick={() => handleStartQuest('rhyme')}
-              className="min-h-[80px] bg-vowel text-vowel-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-vowel-border"
+              className="min-h-[80px] bg-digraph text-digraph-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-digraph-border"
               aria-label="Start Rhyme Hunt quest"
               role="button"
             >
@@ -1097,25 +1110,25 @@ const LexiaHome: React.FC = () => {
             </button>
             <button
               onClick={() => handleStartQuest('memory')}
-              className="min-h-[80px] bg-digraph text-digraph-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-digraph-border"
+              className="min-h-[80px] bg-secondary text-secondary-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-border"
               aria-label="Start Memory Match quest"
               role="button"
             >
               <span className="text-2xl" aria-hidden="true">🧠</span>
-              <span className="text-sm">Memory Match</span>
+              <span className="text-sm">Memory</span>
             </button>
             <button
               onClick={() => handleStartQuest('syllable')}
-              className="min-h-[80px] bg-welded text-welded-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-welded-border"
+              className="min-h-[80px] bg-muted text-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-border"
               aria-label="Start Syllable Sort quest"
               role="button"
             >
               <span className="text-2xl" aria-hidden="true">👏</span>
-              <span className="text-sm">Syllable Sort</span>
+              <span className="text-sm">Syllables</span>
             </button>
             <button
               onClick={() => handleStartQuest('spelling')}
-              className="min-h-[80px] bg-accent text-accent-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
+              className="min-h-[80px] bg-card text-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-border"
               aria-label="Start Spelling Challenge"
               role="button"
             >
@@ -1124,23 +1137,12 @@ const LexiaHome: React.FC = () => {
             </button>
             <button
               onClick={() => handleStartQuest('vocabulary')}
-              className="min-h-[80px] bg-secondary text-secondary-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
+              className="min-h-[80px] bg-card text-foreground rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-2 border-border"
               aria-label="Start Vocabulary Quiz"
               role="button"
             >
-              <span className="text-2xl" aria-hidden="true">📚</span>
-              <span className="text-sm">Word Meanings</span>
-            </button>
-            {/* Word Wall - Wilson Mastery Game */}
-            <button
-              onClick={() => handleStartQuest('wordWall')}
-              className="min-h-[80px] bg-gradient-to-br from-welded to-digraph text-welded-text rounded-2xl font-bold shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform col-span-2 border-2 border-welded-border"
-              aria-label="Start Word Wall Mastery"
-              role="button"
-            >
-              <span className="text-2xl" aria-hidden="true">🧱</span>
-              <span className="text-sm">Word Wall</span>
-              <span className="text-[10px] opacity-80">Wilson mastery mode!</span>
+              <span className="text-2xl" aria-hidden="true">📖</span>
+              <span className="text-sm">Vocabulary</span>
             </button>
           </div>
         </motion.div>
@@ -1158,60 +1160,102 @@ const LexiaHome: React.FC = () => {
         />
       </main>
 
-      {/* Bottom Nav - iOS safe area */}
+      {/* Bottom Nav - iOS safe area with animated icons */}
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t-2 border-border px-4 py-4 pb-safe flex justify-around z-50">
-        <button
+        <motion.button
           onClick={() => { playEffect('tap'); setView('home'); }}
-          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${(view as GameView) === 'home' ? 'text-primary' : 'text-muted-foreground'}`}
+          className={`flex flex-col items-center gap-1 min-h-[44px] transition-colors ${(view as GameView) === 'home' ? 'text-primary' : 'text-muted-foreground'}`}
           aria-label="Go to quests"
+          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.1 }}
         >
-          <Award size={22} />
+          <motion.div
+            animate={(view as GameView) === 'home' ? { y: [0, -3, 0], rotate: [0, 5, -5, 0] } : {}}
+            transition={{ repeat: Infinity, duration: 2 }}
+          >
+            <Award size={22} />
+          </motion.div>
           <span className="text-xs font-bold">Quests</span>
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           onClick={() => { playEffect('tap'); setShowLoginRewards(true); }}
-          className={`relative flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${showLoginRewards ? 'text-primary' : 'text-muted-foreground'}`}
+          className={`relative flex flex-col items-center gap-1 min-h-[44px] transition-colors ${showLoginRewards ? 'text-primary' : 'text-muted-foreground'}`}
           aria-label="Daily rewards"
+          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.1 }}
         >
-          <Gift size={22} />
+          <motion.div
+            animate={state.loginRewards?.lastClaimDate !== getTodayStr() ? { scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] } : {}}
+            transition={{ repeat: Infinity, duration: 1.5 }}
+          >
+            <Gift size={22} />
+          </motion.div>
           <span className="text-xs font-bold">Daily</span>
           {/* Unclaimed reward indicator */}
           {state.loginRewards?.lastClaimDate !== getTodayStr() && (
             <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full animate-pulse" />
           )}
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           onClick={() => { playEffect('tap'); setShowStore(true); }}
-          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${showStore ? 'text-primary' : 'text-muted-foreground'}`}
+          className={`flex flex-col items-center gap-1 min-h-[44px] transition-colors ${showStore ? 'text-primary' : 'text-muted-foreground'}`}
           aria-label="Open reward store"
+          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.1 }}
         >
-          <ShoppingBag size={22} />
+          <motion.div
+            animate={showStore ? { y: [0, -2, 0] } : {}}
+            transition={{ repeat: Infinity, duration: 0.5 }}
+          >
+            <ShoppingBag size={22} />
+          </motion.div>
           <span className="text-xs font-bold">Store</span>
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           onClick={() => { playEffect('tap'); setView('trophies'); }}
-          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${(view as GameView) === 'trophies' ? 'text-primary' : 'text-muted-foreground'}`}
+          className={`flex flex-col items-center gap-1 min-h-[44px] transition-colors ${(view as GameView) === 'trophies' ? 'text-primary' : 'text-muted-foreground'}`}
           aria-label="View trophies"
+          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.1 }}
         >
-          <Trophy size={22} />
+          <motion.div
+            animate={(view as GameView) === 'trophies' ? { rotate: [0, -10, 10, 0], scale: [1, 1.1, 1] } : {}}
+            transition={{ repeat: Infinity, duration: 2 }}
+          >
+            <Trophy size={22} />
+          </motion.div>
           <span className="text-xs font-bold">Trophies</span>
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           onClick={() => { playEffect('tap'); setView('map'); }}
-          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${(view as GameView) === 'map' ? 'text-primary' : 'text-muted-foreground'}`}
+          className={`flex flex-col items-center gap-1 min-h-[44px] transition-colors ${(view as GameView) === 'map' ? 'text-primary' : 'text-muted-foreground'}`}
           aria-label="Open world map"
+          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.1 }}
         >
-          <Map size={22} />
+          <motion.div
+            animate={(view as GameView) === 'map' ? { scale: [1, 1.15, 1] } : {}}
+            transition={{ repeat: Infinity, duration: 1.5 }}
+          >
+            <Map size={22} />
+          </motion.div>
           <span className="text-xs font-bold">World</span>
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           onClick={() => { playEffect('tap'); setView('profile'); }}
-          className={`flex flex-col items-center gap-1 min-h-[44px] active:scale-95 transition-transform ${(view as GameView) === 'profile' ? 'text-primary' : 'text-muted-foreground'}`}
+          className={`flex flex-col items-center gap-1 min-h-[44px] transition-colors ${(view as GameView) === 'profile' ? 'text-primary' : 'text-muted-foreground'}`}
           aria-label="View profile"
+          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.1 }}
         >
-          <User size={22} />
+          <motion.div
+            animate={(view as GameView) === 'profile' ? { y: [0, -3, 0] } : {}}
+            transition={{ repeat: Infinity, duration: 1.5 }}
+          >
+            <User size={22} />
+          </motion.div>
           <span className="text-xs font-bold">Profile</span>
-        </button>
+        </motion.button>
       </nav>
     </div>
   );

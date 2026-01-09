@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Volume2 } from 'lucide-react';
+import { Volume2, VolumeX } from 'lucide-react';
 
 export type NPCCharacter = 'whisper' | 'fox' | 'wizard' | 'fairy';
-export type NPCMood = 'idle' | 'hint' | 'celebrate' | 'encourage' | 'thinking';
+export type NPCMood = 'idle' | 'hint' | 'celebrate' | 'encourage' | 'thinking' | 'muted';
 
 interface NPCGuideProps {
   character?: NPCCharacter;
@@ -14,6 +14,7 @@ interface NPCGuideProps {
   isVisible?: boolean;
   position?: 'bottom-left' | 'bottom-right' | 'floating';
   size?: 'sm' | 'md' | 'lg';
+  streakReminderInterval?: number; // Minutes between streak reminders (default 5)
 }
 
 const NPC_DATA: Record<NPCCharacter, { emoji: string; name: string; defaultMessage: string }> = {
@@ -45,6 +46,7 @@ const MOOD_ANIMATIONS: Record<NPCMood, { scale: number[]; rotate: number[]; y: n
   celebrate: { scale: [1, 1.2, 1], rotate: [0, 10, -10, 0], y: [0, -15, 0] },
   encourage: { scale: [1, 1.05, 1], rotate: [0, 3, -3, 0], y: [0, -4, 0] },
   thinking: { scale: [1, 1, 1], rotate: [0, -5, 5, 0], y: [0, 0, 0] },
+  muted: { scale: [1, 0.98, 1], rotate: [0, 0, 0], y: [0, 0, 0] },
 };
 
 const SIZE_CLASSES = {
@@ -62,20 +64,41 @@ export const NPCGuide: React.FC<NPCGuideProps> = ({
   isVisible = true,
   position = 'bottom-left',
   size = 'md',
+  streakReminderInterval = 5,
 }) => {
   const [showBubble, setShowBubble] = useState(!!message);
+  const [isMuted, setIsMuted] = useState(false);
+  const lastReminderRef = useRef<number>(0);
   const npc = NPC_DATA[character];
   const displayMessage = message || npc.defaultMessage;
-  const animation = MOOD_ANIMATIONS[mood];
+  const animation = MOOD_ANIMATIONS[isMuted ? 'muted' : mood];
+  
+  // Check if this is a streak reminder and if enough time has passed
+  const isStreakReminder = message?.toLowerCase().includes('streak');
 
   useEffect(() => {
     if (message) {
+      const now = Date.now();
+      const minInterval = streakReminderInterval * 60 * 1000; // Convert to ms
+      
+      // For streak reminders, check if enough time has passed
+      if (isStreakReminder) {
+        if (now - lastReminderRef.current < minInterval) {
+          // Not enough time passed, don't show
+          return;
+        }
+        lastReminderRef.current = now;
+        setIsMuted(true); // Show muted icon for streak reminders
+      } else {
+        setIsMuted(false);
+      }
+      
       setShowBubble(true);
-      if (autoSpeak && onSpeak) {
+      if (autoSpeak && onSpeak && !isMuted) {
         onSpeak(message);
       }
     }
-  }, [message, autoSpeak, onSpeak]);
+  }, [message, autoSpeak, onSpeak, streakReminderInterval, isStreakReminder]);
 
   useEffect(() => {
     if (showBubble && message) {
@@ -121,7 +144,7 @@ export const NPCGuide: React.FC<NPCGuideProps> = ({
                   onClick={() => onSpeak?.(displayMessage)}
                   className="h-8 w-8 bg-muted rounded-full flex items-center justify-center shrink-0 active:scale-95"
                 >
-                  <Volume2 size={14} />
+                  {isMuted ? <VolumeX size={14} className="text-muted-foreground" /> : <Volume2 size={14} />}
                 </button>
               </div>
               {/* Tail */}
