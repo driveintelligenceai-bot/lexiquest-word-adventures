@@ -3,9 +3,18 @@ import { motion } from 'framer-motion';
 import { 
   ArrowLeft, Clock, BarChart3, Calendar, Shield, 
   Flame, Trophy, Star, Settings, ChevronRight, 
-  Volume2, Timer, Lock
+  Volume2, Timer, Lock, BookOpen, LogOut
 } from 'lucide-react';
 import { ParentGate } from '@/components/lexi/ParentGate';
+import { PhonemeProgressReport } from './PhonemeProgressReport';
+
+interface PhonemePerformance {
+  phoneme: string;
+  phoneme_type: string;
+  correct_count: number;
+  incorrect_count: number;
+  wilson_step: number;
+}
 
 interface ParentDashboardProps {
   childName: string;
@@ -20,12 +29,17 @@ interface ParentDashboardProps {
   xpHistory: Record<string, number>;
   sessionHistory: Record<string, number>; // date -> minutes
   completedQuests: string[];
+  phonemePerformances?: PhonemePerformance[];
   settings: {
     dailyTimeLimit: number; // minutes
     voiceEnabled: boolean;
   };
   onBack: () => void;
   onUpdateSettings: (settings: { dailyTimeLimit?: number; voiceEnabled?: boolean }) => void;
+  onPracticePhoneme?: (phoneme: string) => void;
+  onSpeak?: (text: string) => void;
+  onLogout?: () => void;
+  isAuthenticated?: boolean;
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -38,12 +52,17 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
   xpHistory,
   sessionHistory,
   completedQuests,
+  phonemePerformances = [],
   settings,
   onBack,
   onUpdateSettings,
+  onPracticePhoneme,
+  onSpeak,
+  onLogout,
+  isAuthenticated = false,
 }) => {
-  const [showGate, setShowGate] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'time' | 'progress'>('overview');
+  const [showGate, setShowGate] = useState(!isAuthenticated);
+  const [activeTab, setActiveTab] = useState<'overview' | 'phonemes' | 'time' | 'progress'>('overview');
 
   // Calculate weekly stats
   const weeklyStats = useMemo(() => {
@@ -107,6 +126,15 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
           <div className="w-14 h-14 bg-muted rounded-2xl flex items-center justify-center text-3xl">
             {childAvatar}
           </div>
+          {onLogout && isAuthenticated && (
+            <button
+              onClick={onLogout}
+              className="h-12 w-12 bg-muted rounded-full flex items-center justify-center active:scale-95 transition-transform ml-2"
+              aria-label="Log out"
+            >
+              <LogOut size={18} className="text-muted-foreground" />
+            </button>
+          )}
         </div>
       </header>
 
@@ -114,7 +142,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
       <div className="flex gap-2 p-4 bg-card border-b border-border overflow-x-auto">
         {[
           { id: 'overview', label: 'Overview', icon: BarChart3 },
-          { id: 'time', label: 'Time Limits', icon: Clock },
+          { id: 'phonemes', label: 'Sounds', icon: BookOpen },
+          { id: 'time', label: 'Time', icon: Clock },
           { id: 'progress', label: 'Progress', icon: Trophy },
         ].map((tab) => (
           <button
@@ -273,6 +302,16 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
               </p>
             </motion.div>
           </>
+        )}
+
+        {/* Phonemes Tab - Detailed Sound Progress */}
+        {activeTab === 'phonemes' && (
+          <PhonemeProgressReport
+            performances={phonemePerformances}
+            childName={childName}
+            onPracticePhoneme={onPracticePhoneme}
+            onSpeak={onSpeak}
+          />
         )}
 
         {/* Time Limits Tab */}

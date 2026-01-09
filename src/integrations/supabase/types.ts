@@ -47,6 +47,50 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_results: {
+        Row: {
+          activity_type: string
+          correct: boolean
+          created_at: string | null
+          hints_used: number | null
+          id: string
+          phonemes_tested: string[] | null
+          student_id: string
+          time_seconds: number | null
+          word: string | null
+        }
+        Insert: {
+          activity_type: string
+          correct: boolean
+          created_at?: string | null
+          hints_used?: number | null
+          id?: string
+          phonemes_tested?: string[] | null
+          student_id: string
+          time_seconds?: number | null
+          word?: string | null
+        }
+        Update: {
+          activity_type?: string
+          correct?: boolean
+          created_at?: string | null
+          hints_used?: number | null
+          id?: string
+          phonemes_tested?: string[] | null
+          student_id?: string
+          time_seconds?: number | null
+          word?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_results_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenge_results: {
         Row: {
           attempts: number | null
@@ -170,6 +214,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "daily_progress_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      phoneme_performance: {
+        Row: {
+          correct_count: number
+          created_at: string | null
+          id: string
+          incorrect_count: number
+          last_practiced: string | null
+          phoneme: string
+          phoneme_type: string
+          student_id: string
+          wilson_step: number
+        }
+        Insert: {
+          correct_count?: number
+          created_at?: string | null
+          id?: string
+          incorrect_count?: number
+          last_practiced?: string | null
+          phoneme: string
+          phoneme_type: string
+          student_id: string
+          wilson_step?: number
+        }
+        Update: {
+          correct_count?: number
+          created_at?: string | null
+          id?: string
+          incorrect_count?: number
+          last_practiced?: string | null
+          phoneme?: string
+          phoneme_type?: string
+          student_id?: string
+          wilson_step?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phoneme_performance_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
@@ -356,6 +444,7 @@ export type Database = {
           last_activity_date: string | null
           longest_streak: number | null
           owned_items: string[] | null
+          parent_user_id: string | null
           streak_freeze_tokens: number | null
           total_xp: number | null
           treasures_collected: number | null
@@ -381,6 +470,7 @@ export type Database = {
           last_activity_date?: string | null
           longest_streak?: number | null
           owned_items?: string[] | null
+          parent_user_id?: string | null
           streak_freeze_tokens?: number | null
           total_xp?: number | null
           treasures_collected?: number | null
@@ -406,6 +496,7 @@ export type Database = {
           last_activity_date?: string | null
           longest_streak?: number | null
           owned_items?: string[] | null
+          parent_user_id?: string | null
           streak_freeze_tokens?: number | null
           total_xp?: number | null
           treasures_collected?: number | null
