@@ -130,17 +130,16 @@ export const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComple
     }
   };
 
-  // Background gradient classes based on step
-  const bgGradient = stepIndex === STEPS.length - 1
-    ? 'from-emerald-400 via-teal-500 to-cyan-500'
-    : 'from-violet-400 via-purple-500 to-indigo-500';
-
+  // Background - brand blue with dynamic viewport height for mobile
   return (
     <div 
-      className={`min-h-[100dvh] bg-gradient-to-br ${bgGradient} flex flex-col items-center justify-center p-4 sm:p-6`}
+      className="min-h-[100dvh] flex flex-col items-center justify-center p-4 sm:p-6"
       style={{ 
         paddingTop: 'max(env(safe-area-inset-top), 16px)',
         paddingBottom: 'max(env(safe-area-inset-bottom), 16px)',
+        background: stepIndex === STEPS.length - 1
+          ? 'linear-gradient(135deg, hsl(215 75% 48%) 0%, hsl(24 95% 53%) 100%)'
+          : 'linear-gradient(135deg, hsl(215 70% 52%) 0%, hsl(215 75% 40%) 100%)',
       }}
     >
       {showConfetti && <Confetti />}
